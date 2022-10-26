@@ -1,0 +1,120 @@
+<html>
+<head>
+	<title>Add Data</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<style>
+.description {
+  color: #4d0000;
+}
+p.ex {
+	padding-top: 23px;
+	 }
+p.exh {
+     margin-top: -13px;
+}
+p.ex1 {
+     margin-top: -50px;
+}
+p.ex {
+	padding-top: 1px;
+	 
+}
+a:link {
+    color:#000000;
+}
+div.a {
+    width: 100%;
+    border: 0px solid black;
+}
+div.c {
+    text-align: center;
+} 
+ul
+{
+    font-family: Arial, Verdana;
+    font-size: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul li
+{
+    display: block;
+    position: relative;
+    float: left;
+}
+
+li ul
+{
+    display: none;
+}
+
+ul li a 
+{
+    display: block;
+    text-decoration: none;
+    color: #ffffff;
+    border-top: 1px solid #ffffff;
+    padding: 5px 15px 5px 15px;
+    background: #2C5463;
+    margin-left: 1px;
+    white-space: nowrap;
+	}
+
+
+
+
+
+</style>
+<body style="background-color:#eac086">
+	<p align="center" class="ex"><a href="new_monthly_project_report.php"><h2 align="center">Home</h2></a></p>
+	<br/><br/>
+    <center>
+	<form action="add.php" method="post" name="form1">
+		<table width="40%" border="1" style="text-align:center;>
+			<tr align="left"> 
+				<td><p class="description"><b>Project Name</b></p></td>
+				<td><input type="text" name="project_name" size="55" height="50"></td>
+			</tr>
+			<tr align="center">
+				<td><p class="description" ><b>Project Description</b></p></td>
+				<td><textarea name="project_description" rows="17" cols="48"></textarea></td>
+			</tr>
+			
+			<tr align="center">
+				<td><p class="description" ><b>Add Notes</b></p></td>
+				<td><textarea name="notes" rows="5" cols="48"></textarea></td>
+			</tr>
+			
+			
+			<tr align="center">
+				<td><p class="description" ><b>Project Status</b></p></td>
+				<td><select name="project_status" style="width:400px";>
+				<option value="New" size="55" height="50">New</option>
+				<option value="Working" size="55" height="50">Working</option>
+				<option value="Pending" size="55" height="50">Pending</option>
+				<option value="Closed" size="55" height="50">Closed</option></select>
+				</td>
+			</tr>
+			<tr align="center">
+				<td><p class="description" ><b>Starting Date</b></p></td>
+				<td><input type="datetime-local" name="starting_date" size="55" cols="48"></td>
+			</tr>
+			
+			<tr align="center">
+				<td><p class="description" ><b>Ending Date</b></p></td>
+				<td><input type="datetime-local" name="ending_date" size="55" cols="48"></td>
+			</tr>
+			
+			<tr> 
+				<td></td>
+				<td align="right"><input type="submit" name="Submit" value="Add"></td>
+			</tr>
+		</table>
+	</form>
+	</center>
+</body>
+</html>
+

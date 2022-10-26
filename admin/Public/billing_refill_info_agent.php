@@ -1,0 +1,168 @@
+<?php
+
+include '../lib/admin.defines.php';
+include '../lib/admin.module.access.php';
+include '../lib/admin.smarty.php';
+
+if (! has_rights (ACX_BILLING)) {
+    Header ("HTTP/1.0 401 Unauthorized");
+    Header ("Location: PP_error.php?c=accessdenied");
+    die();
+}
+
+getpost_ifset(array('id'));
+
+if (empty($id)) {
+    header("Location: billing_entity_logrefill_agent.php?atmenu=payment&section=10");
+}
+
+$DBHandle  = DbConnect();
+
+$refill_table = new Table('cc_logrefill_agent','*');
+$refill_clause = "id = ".$id;
+$refill_result = $refill_table -> Get_list($DBHandle, $refill_clause, 0);
+$refill = $refill_result[0];
+
+if (empty($refill)) {
+    header("Location: billing_entity_logrefill_agent.php?atmenu=payment&section=10");
+}
+
+// #### HEADER SECTION
+$smarty->display('main.tpl');
+
+?>
+
+<div class="kt-content  kt-grid__item kt-grid__item--fluid kt-grid kt-grid--hor" id="kt_content">
+											
+<!-- begin:: Subheader -->
+<div class="kt-subheader   kt-grid__item" id="kt_subheader">
+    <div class="kt-container  kt-container--fluid ">
+        <div class="kt-subheader__main" style="margin-top:0px;">
+            
+            <h3 class="kt-subheader__title">
+                Billing                            </h3>
+            
+                            <span class="kt-subheader__separator kt-hidden"></span>
+                <div class="kt-subheader__breadcrumbs">
+                    <a href="#" class="kt-subheader__breadcrumbs-home"><i class="flaticon2-shelter"></i></a>
+                                            <span class="kt-subheader__breadcrumbs-separator"></span>
+                        <a href="" class="kt-subheader__breadcrumbs-link">
+                            Billing                        </a>
+                                            <span class="kt-subheader__breadcrumbs-separator"></span>
+                        <a href="" class="kt-subheader__breadcrumbs-link">
+                             Agent Billing                       </a>
+							  <span class="kt-subheader__breadcrumbs-separator"></span>
+                        <a href="billing_refill_info_agent.php?id=1" class="kt-subheader__breadcrumbs-link">
+                            Agent Refills Info                </a>
+                                        <!-- <span class="kt-subheader__breadcrumbs-link kt-subheader__breadcrumbs-link--active">Active link</span> -->
+                </div>
+                    
+        </div>
+        
+    </div>
+	
+</div>
+
+<!-- end:: Subheader -->
+
+<div class="kt-portlet">
+	<div class="kt-portlet__head">
+        <div class="kt-portlet__head-label">
+		<h5 class="kt-portlet__head-title">
+           <span class="icon"> <?php echo gettext("Agent Refills Info"); ?></span>
+		   
+	    </h5>
+        </div>
+	</div>
+<br>
+
+<table style="width : 80%;" class="editform_table1">
+    <tr height="20px">
+        <td>
+            <label class="col-12 col-form-label">
+				<?php echo gettext("ACCOUNT NUMBER") ?> :
+			</label>
+        </td>
+        <td>
+			<p class="form-control-static">
+				<?php
+				if ( has_rights (ACX_CUSTOMER)) {
+					echo infocustomer_id($refill['card_id']);
+				} else {
+					echo nameofcustomer_id($refill['card_id']);
+				}
+				?>
+			</p>
+		</td>
+   </tr>
+   <tr height="20px">
+        <td>
+            <label class="col-12 col-form-label">
+				<?php echo gettext("AMOUNT") ?> :
+			</label>
+        </td>
+        <td>
+			<p class="form-control-static">
+				<?php echo $refill['credit']." ".strtoupper(BASE_CURRENCY);?>
+			</p>
+		</td>
+		
+   </tr>
+    <tr height="20px">
+         <td>
+            <label class="col-12 col-form-label">
+				<?php echo gettext("CREATION DATE") ?> :
+			</label>
+        </td>
+        <td>
+			<p class="form-control-static">
+				<?php echo $refill['date']?>
+			</p>
+		</td>
+		
+		
+    </tr>
+   <tr height="20px">
+        <td>
+            <label class="col-12 col-form-label">
+				<?php echo gettext("REFILL TYPE") ?> :
+			</label>
+        </td>
+        <td>
+			<p class="form-control-static">
+				<?php
+            $list_type = Constants::getRefillType_List();
+            echo $list_type[$refill['refill_type']][0];?>
+			</p>
+		</td>
+		
+   </tr>
+   <tr height="20px">
+        <td>
+            <label class="col-12 col-form-label">
+				<?php echo gettext("DESCRIPTION") ?> :
+			</label>
+        </td>
+        <td>
+			<p class="form-control-static">
+				<?php echo $refill['description']?>
+			</p>
+		</td>
+		
+    </tr>
+
+ </table>
+ <br/>
+ <div style="width : 80%; text-align : right; margin-left:auto;margin-right:auto;" >
+     <a class="kt-wizard-v4__nav-item nav-item"  href="<?php echo "billing_entity_logrefill_agent.php?atmenu=payment&section=10" ?>">
+        
+        <span class="btn btn-default"><?php echo gettext("REFILLS AGENT LIST"); ?> </span>
+    </a>
+	<br>
+</div>
+<br><br><br><br><br><br>
+
+
+<?php
+
+$smarty->display( 'footer.tpl');

