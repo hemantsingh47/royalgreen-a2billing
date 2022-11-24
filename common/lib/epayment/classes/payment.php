@@ -42,7 +42,6 @@ Class payment {
       }
 
       for ($i=0, $n=sizeof($include_modules); $i<$n; $i++) {
-print_r(dirname(__FILE__).'/../methods/' . $include_modules[$i]['file']);
           include(dirname(__FILE__).'/../methods/' . $include_modules[$i]['file']);
           $GLOBALS[$include_modules[$i]['class']] = new $include_modules[$i]['class'];
 
@@ -134,7 +133,6 @@ print_r(dirname(__FILE__).'/../methods/' . $include_modules[$i]['file']);
           }
         }
       }
-
       return $selection_array;
     }
 

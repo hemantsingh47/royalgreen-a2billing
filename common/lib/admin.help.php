@@ -271,6 +271,7 @@ $SPOT['AUTHORIZENET'] = '';
 $SPOT['WORLDPAY'] = '';
 $SPOT['PLUGNPAY'] = '<a href="http://www.plugnpay.com/" target="_blank"><img src="' . KICON_PATH . '/plugnpay.png" alt="plugnpay.com"/></a>';
 $SPOT['EBS'] = '<a href="http://www.ebs.in/" target="_blank"><img src="' . KICON_PATH . '/ebs.png" alt="ebs.in"/></a>';
+$SPOT['SSLCOMMERZ'] = '<a href="https://merchant.sslcommerz.com/" target="_blank"><img style="width:150px; height:50px" src="' . KICON_PATH . '/sslcommerz_logo.png" alt="sslcommerz.com"/></a>';
 $PAYMENT_METHOD = '
 <table width="100%" align="center">
     <tr>
@@ -288,6 +289,8 @@ $PAYMENT_METHOD = '
             ' . $SPOT['EBS'] . '
             &nbsp;&nbsp; &nbsp;
             ' . $SPOT['STRIPE'] . '
+             &nbsp;&nbsp; &nbsp;
+            ' . $SPOT['SSLCOMMERZ'] . '
         </td>
     </tr>
 </table>';

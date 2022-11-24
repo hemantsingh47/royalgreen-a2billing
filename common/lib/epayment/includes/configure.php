@@ -19,6 +19,8 @@
     define('PLUGNPAY_PAYMENT_URL', $A2B->config["epayment_method"]["plugnpay_payment_url"]);
     define('STORE_NAME', $A2B->config["epayment_method"]["store_name"]);
 	define('EBS_PAYMENT_URL', $A2B->config["epayment_method"]["ebs_payment_url"]);
+    define('SSLCOMMERZ_TEST_PAYMENT_URL', $A2B->config["epayment_method"]["test_sslcommerz_payment_url"]);
+    define('SSLCOMMERZ_LIVE_PAYMENT_URL', $A2B->config["epayment_method"]["live_sslcommerz_payment_url"]);
 	
     define('DIR_WS_IMAGES', 'images/');
     define('DIR_WS_ICONS', DIR_WS_IMAGES . 'icons/');
