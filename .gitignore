@@ -1,6 +1,7 @@
 /node_modules
 .env*
 *.apk
+hello.apk
 .phpunit.result.cache
 docker-compose.override.yml
 Homestead.json
