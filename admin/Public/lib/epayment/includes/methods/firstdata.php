@@ -1,4 +1,0 @@
-<?php
-
-    define('MODULE_PAYMENT_FIRSTDATA_TEXT_TITLE', 'FirstData');
-    define('MODULE_PAYMENT_FIRSTDATA_TEXT_DESCRIPTION', 'FirstData');
