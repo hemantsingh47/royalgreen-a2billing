@@ -3,13 +3,13 @@
 include './lib/customer.defines.php';
 include './lib/customer.module.access.php';
 include './lib/Form/Class.FormHandler.inc.php';
+include './lib/epayment/includes/configure.php';
 include './lib/epayment/classes/payment.php';
 include './lib/epayment/classes/order.php';
 include './lib/epayment/classes/currencies.php';
 include './lib/epayment/includes/general.php';
 include './lib/epayment/includes/html_output.php';
 include './lib/epayment/includes/loadconfiguration.php';
-include './lib/epayment/includes/configure.php';
 include './lib/customer.smarty.php';
 
 if (! has_rights (ACX_ACCESS)) {
@@ -115,22 +115,13 @@ function rowOutEffect(object) {
 <div class="kt-subheader   kt-grid__item" id="kt_subheader">
     <div class="kt-container  kt-container--fluid ">
         <div class="kt-subheader__main">
-            
-            <h3 class="kt-subheader__title">
-                User                           </h3>
-            
-                            <span class="kt-subheader__separator kt-hidden"></span>
-                <div class="kt-subheader__breadcrumbs">
-                    <a href="#" class="kt-subheader__breadcrumbs-home"><i class="flaticon2-shelter"></i></a>
-                        <a href="" class="kt-subheader__breadcrumbs-link">
-                            Checkout Payment                    </a>
-							 
-                         
-                                        <!-- <span class="kt-subheader__breadcrumbs-link kt-subheader__breadcrumbs-link--active">Active link</span> -->
-                </div>
-                    
+            <h3 class="kt-subheader__title">User</h3>
+            <span class="kt-subheader__separator kt-hidden"></span>
+            <div class="kt-subheader__breadcrumbs">
+                <a href="#" class="kt-subheader__breadcrumbs-home"><i class="flaticon2-shelter"></i></a>
+                <a href="" class="kt-subheader__breadcrumbs-link">Checkout Payment</a>
+            </div>
         </div>
-       
     </div>
 </div>
 
@@ -147,25 +138,13 @@ function rowOutEffect(object) {
 	 <div class="kt-portlet__body">
 	 
 	 <div class="col-md-12">
-
-
-
-
-
-
-
-<?php echo $payment_modules->javascript_validation(); ?>
-
-
-
-<?php
-    echo $PAYMENT_METHOD;
-?>
-<br>
-<?php
-$form_action_url = tep_href_link("checkout_confirmation.php", '');
-echo tep_draw_form('checkout_amount', $form_action_url, 'post', 'onsubmit="checkamount()"');
-?>
+        <?php echo $payment_modules->javascript_validation(); ?>
+        <?php echo $PAYMENT_METHOD; ?>
+        <br>
+        <?php
+        $form_action_url = tep_href_link("checkout_confirmation.php", '');
+        echo tep_draw_form('checkout_amount', $form_action_url, 'post', 'onsubmit="checkamount()"');
+        ?>
     <?php
         if ($HD_Form->FG_CSRF_STATUS == true) {
     ?>
@@ -348,26 +327,21 @@ echo tep_draw_form('checkout_amount', $form_action_url, 'post', 'onsubmit="check
                 <select name="amount" class="form-control" style="width:40%"  >
                 <?php
                 $arr_purchase_amount = preg_split("/:/", EPAYMENT_PURCHASE_AMOUNT);
-                        if (!is_array($arr_purchase_amount)) $arr_purchase_amount[0]=10;
+                if (!is_array($arr_purchase_amount)) $arr_purchase_amount[0]=10;
 
-                        foreach ($arr_purchase_amount as $value) {
-                ?>
-                <option value="<?php echo $value?>">
-                    <?php
-                echo round($value,2);
-                if ($two_currency) {
-                    echo " ".strtoupper(BASE_CURRENCY);
-					//echo round($value/$mycur,2)." ".strtoupper($_SESSION['currency']);
+                foreach ($arr_purchase_amount as $value) { ?>
+                    <option value="<?php echo $value?>">
+                    <?php echo round($value,2);
+                        if ($two_currency) {
+                        echo " ".strtoupper(BASE_CURRENCY);
+					   //echo round($value/$mycur,2)." ".strtoupper($_SESSION['currency']);
+                        } ?>
+                    </option>
 
-                }
-                ?>
-                </option>
-
-                <?php }?></select>
+                <?php }?>
+                </select>
                 &nbsp;<?php if(!$two_currency) echo strtoupper(BASE_CURRENCY);
-                  }
-                ?>
-
+                } ?>
                 </td>
             </tr>
             <tr>

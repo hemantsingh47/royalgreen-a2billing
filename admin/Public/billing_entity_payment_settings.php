@@ -8,6 +8,7 @@ include '../lib/epayment/classes/payment.php';
 include '../lib/epayment/classes/objectinfo.php';
 include '../lib/epayment/classes/table_block.php';
 include '../lib/epayment/classes/box.php';
+include '../lib/epayment/includes/configure.php';
 include '../lib/epayment/includes/general.php';
 include '../lib/epayment/includes/html_output.php';
 
@@ -37,7 +38,6 @@ $QUERY = sprintf($QUERY, $paymentMethodID);
 $DBHandle = DbConnect();
 $return = $instance_sub_table->Get_list($DBHandle, $QUERY, 0);
 $paymentMethod = substr($return[0][0], 0, strrpos($return[0][0], '.'));
-
 $instance_sub_table = new Table("cc_configuration", "payment_filename");
 $QUERY = " active = 't'";
 
@@ -56,13 +56,9 @@ if (tep_not_null($action)) {
             break;
     }
 }
-?>
 
-
-
-
-<?php
 $payment_modules = new payment($paymentMethod);
+
 $GLOBALS['paypal']->enabled = true;
 $GLOBALS['moneybookers']->enabled = true;
 $GLOBALS['authorizenet']->enabled = true;
@@ -74,7 +70,7 @@ $GLOBALS['stripe']->enabled = true;
 $GLOBALS['sslcommerz']->enabled = true;
 
 $module_keys = $payment_modules->keys();
-echo '<pre>';print_r($module_keys);echo '</pre>';
+
 $keys_extra = array ();
 $instance_sub_table = new Table("cc_configuration", "configuration_title, configuration_value, configuration_description, use_function, set_function");
 

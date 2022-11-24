@@ -93,7 +93,7 @@ function Check() {
 }
 </script>
 
-<form name="searchform" id="searchform" method="post" action="A2B_entity_config.php">
+<form name="searchform" id="searchform" method="post" action="billing_entity_config.php">
     <input type="hidden" name="searchenabled" value="yes">
     <input type="hidden" name="posted" value="1">
     <?php

@@ -5,7 +5,7 @@ include 'lib/customer.module.access.php';
 include 'lib/customer.smarty.php';
 include 'lib/epayment/includes/configure.php';
 include 'lib/epayment/includes/html_output.php';
-include './lib/epayment/includes/general.php';
+include 'lib/epayment/includes/general.php';
 
 if (!has_rights(ACX_ACCESS)) {
     Header("HTTP/1.0 401 Unauthorized");
@@ -270,73 +270,54 @@ border-radius: 100px;
     </div>
 </div>	
 <!-- begin:: Content -->
+<table style="width:100%;margin:0 auto; background:#ffffff;" cellspacing="0"  align="center" >
+	<tr>
+	   <td style="background:#ffffff; text-align:center;" colspan="2">
+	        <?php echo $PAYMENT_METHOD;?>
+            <?php if ($A2B->config["epayment_method"]['enable']) { ?>
+    	</td>
+	</tr>
+<!--<tr>
+		<td>
+            <?php
+                $arr_purchase_amount = preg_split("/:/", EPAYMENT_PURCHASE_AMOUNT);
+                if (!is_array($arr_purchase_amount)) {
+                	$to_echo = 10;
+                } else {
+	               if ($two_currency) {
+            		$purchase_amounts_convert = array ();
+            		for ($i = 0; $i < count($arr_purchase_amount); $i++) {
+            			$purchase_amounts_convert[$i] = round($arr_purchase_amount[$i] / $mycur, 2);
+            		}
+		            $to_echo = join(" - ", $purchase_amounts_convert);
+                    echo $to_echo;
+            ?>
+			<font size="2">
+			<?php echo $display_currency; ?> </font>
+			<br/>
+			<?php } ?>
+			<?php //echo join(" - ", $arr_purchase_amount); ?>
+			<font size="2"><?php //echo strtoupper(BASE_CURRENCY);?> </font>
+			<?php } ?>
 
-
-
-
-
-									<table style="width:100%;margin:0 auto; background:#ffffff;" cellspacing="0"  align="center" >
-										<tr>
-										
-										<td style="background:#ffffff; text-align:center;" colspan="2">
-										<?php
-												echo $PAYMENT_METHOD;
-									  ?>
-									  
-									<?php if ($A2B->config["epayment_method"]['enable']) { ?>
-										</td>
-										</tr>
-										<!--<tr>
-										
-										
-											
-											<td>
-
-												<?php
-
-									$arr_purchase_amount = preg_split("/:/", EPAYMENT_PURCHASE_AMOUNT);
-									if (!is_array($arr_purchase_amount)) {
-										$to_echo = 10;
-									} else {
-										if ($two_currency) {
-											$purchase_amounts_convert = array ();
-											for ($i = 0; $i < count($arr_purchase_amount); $i++) {
-												$purchase_amounts_convert[$i] = round($arr_purchase_amount[$i] / $mycur, 2);
-											}
-											$to_echo = join(" - ", $purchase_amounts_convert);
-
-											echo $to_echo;
-									?>
-												<font size="2">
-												<?php echo $display_currency; ?> </font>
-												<br/>
-												<?php } ?>
-												<?php //echo join(" - ", $arr_purchase_amount); ?>
-												<font size="2"><?php //echo strtoupper(BASE_CURRENCY);?> </font>
-												<?php } ?>
-
-											</td>
-										</tr>-->
-										<tr>
-											<td align="center" style="padding:25px;">
-												<form action="checkout_payment.php" method="post">
-						
-													<input type="submit" class="btn btn-brand" style="" value="<?php echo gettext("BUY NOW");?>">
-													<br>
-												</form>
-											</td>
-											
-											<td align="center" style="padding:25px;">
-												<form action="checkout_payment_interswitch.php" method="POST">                         
-                                                        
-                          <button type="submit" class="btn btn-brand" value="Submit">INTERSWITCH BUY</button> 
-													<br>
-												</form>
-											</td>  
-										</tr>
-									</table>
-
-
+		</td>
+	</tr>-->
+	<tr>
+		<td align="center" style="padding:25px;">
+			<form action="checkout_payment.php" method="post">
+				<input type="submit" class="btn btn-brand" style="" value="<?php echo gettext("BUY NOW");?>">
+				<br>
+			</form>
+		</td>
+		
+		<td align="center" style="padding:25px;">
+			<form action="checkout_payment_interswitch.php" method="POST">                             
+                <button type="submit" class="btn btn-brand" value="Submit">INTERSWITCH BUY</button> 
+				<br>
+			</form>
+		</td>  
+	</tr>
+</table>
 <br/>
 <table style="width:80%;margin:0 auto;" cellspacing="0"  align="center" >
     <?php
