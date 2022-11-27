@@ -97,7 +97,10 @@ if (!is_array($transaction_data) && count($transaction_data) == 0) {
         ' line:'.__LINE__."- $trans_str : EPAYMENT RESPONSE: TRANSACTIONID = ".$transactionID.
         " FROM ".$transaction_data[0][4]."; FOR CUSTOMER ID ".$transaction_data[0][1]."; OF AMOUNT ".$transaction_data[0][2]);
 }
-
+echo '<pre>';
+print_r($transaction_data);
+echo "</pre>";
+die;
 $security_verify = true;
 $transaction_detail = serialize($_POST);
 
@@ -253,6 +256,8 @@ switch ($transaction_data[0][4]) {
         $currCurrency           = BASE_CURRENCY;
         $currAmount             = $transaction_data[0][2];
         break;
+    case 'sslcommerz':
+    break;
 
     default:
         write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-NO SUCH EPAYMENT FOUND");

@@ -91,27 +91,22 @@ define("CUSTOMERDP",$imageresult[0]['display_image']);
 $card_table = new Table('cc_card','id_group');
 $card_clause = "id='".$_SESSION['card_id']."' LIMIT 1";
 $card_result = $card_table -> Get_list($DBHandle, $card_clause, 0);
-//print_r($card_result[0]['id_group']);
 $image=NULL;
 if($card_result)
 {
    $instance_table = new Table("cc_card_group","id,id_agent,group_logo_path");
     $clause="id='".$card_result[0]['id_group']."'";
     $resultgroup=$instance_table -> Get_list($DBHandle, $clause);
-    //print_r($resultgroup[0]["group_logo_path"]);
-     $image=$resultgroup[0]["group_logo_path"];
-    if($image==NULL)
-    {
+    $image=$resultgroup[0]["group_logo_path"];
+    if(empty($image)) {
         $image_table = new Table('cc_agent','logopath');
         $imaget_clause = "id='".$resultgroup[0]["id_agent"]."' LIMIT 1";
         $imageresult = $image_table -> Get_list($DBHandle, $imaget_clause, 0);
         $image=$imageresult[0]['logopath'];
-        if($image==NULL)
-        {
+        if(empty($image)) {
           $aimage_table = new Table('cc_ui_authen','logopath');
           $aimageresult = $aimage_table -> Get_list($DBHandle, null, 0);  
           $image=$aimageresult[0]['logopath'];
-            
         }
     } 
 }

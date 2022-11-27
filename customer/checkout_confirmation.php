@@ -17,18 +17,18 @@ if (! has_rights (ACX_ACCESS)) {
     Header ("Location: PP_error.php?c=accessdenied");
     die();
 }
-
 $currencies_list = get_currencies();
+$mycur = 1;
 $two_currency = false;
-if (!isset($currencies_list[strtoupper($_SESSION['currency'])][2]) || !is_numeric($currencies_list[strtoupper($_SESSION['currency'])][2])) {
-    $mycur = 1;
-} else {
+$vat = $_SESSION["vat"];
+$DBHandle = DbConnect();
+
+if (isset($currencies_list[strtoupper($_SESSION['currency'])][2]) && is_numeric($currencies_list[strtoupper($_SESSION['currency'])][2])) {
     $mycur = $currencies_list[strtoupper($_SESSION['currency'])][2];
     $display_currency =strtoupper($_SESSION['currency']);
     if(strtoupper($_SESSION['currency'])!=strtoupper(BASE_CURRENCY))$two_currency=true;
 }
 
-$vat=$_SESSION["vat"];
 
 getpost_ifset(array('amount','payment','authorizenet_cc_expires_year','authorizenet_cc_owner','authorizenet_cc_expires_month','authorizenet_cc_number','authorizenet_cc_expires_year'));
 // PLUGNPAY
@@ -38,24 +38,19 @@ getpost_ifset(array('CardName', 'CardNumber', 'ExpiryDateMonth', 'ExpiryDateYear
 // Invoice
 getpost_ifset(array('item_id','item_type'));
 
+
 $vat_amount= $amount * $vat / 100;
 $total_amount = $amount + ($amount * $vat / 100);
-if (!isset($item_id) || is_null($item_id) || $item_id == "") {
+if (empty($item_id)) {
     $item_id = 0;
 }
-
-$inst_table = new Table();
-
-$QUERY = "SELECT email FROM cc_card WHERE username = '" . $_SESSION["pr_login"] ."' AND uipass = '" . $_SESSION["pr_password"] . "'";
-
-$DBHandle = DbConnect();
-
-$customer_res = $inst_table -> SQLExec($DBHandle, $QUERY);
-$customer_res = json_encode($customer_res);
-
 if (!isset($item_type) || is_null($item_type)) {
     $item_type = '';
 }
+// if(!isset($amount)) {
+//     Header ("Location: userinfo.php");
+//     die;
+// }
 
 if ($item_type == "invoice" && is_numeric($item_id)) {
     $table_invoice = new Table("cc_invoice", "status, paid_status");
@@ -76,11 +71,11 @@ if ($item_type == "invoice" && is_numeric($item_id)) {
 }
 
 $HD_Form = new FormHandler("cc_payment_methods", "payment_method");
+$_SESSION["p_module"] = $payment;
+$_SESSION["p_amount"] = 3;
 
 $HD_Form -> setDBHandler(DbConnect());
 $HD_Form -> init();
-$_SESSION["p_module"] = $payment;
-$_SESSION["p_amount"] = 3;
 
 $paymentTable = new Table();
 $time_stamp = date("Y-m-d H:i:s");
@@ -107,8 +102,16 @@ if (empty($transaction_no)) {
 $HD_Form -> create_toppage ($form_action);
 
 $payment_modules = new payment($payment);
+echo '<pre>';
+print_r($payment_modules);
+echo '</pre>';
 $order = new order($amount_string);
-
+echo '<pre>';
+// print_r($order);
+print_r(SSLCOMMERZ_IS_SANDBOX);
+print_r(SSLCOMMERZ_STORE_ID);
+print_r(SSLCOMMERZ_STORE_PASSWORD);
+echo '</pre>';
 if (is_array($payment_modules->modules)) {
     $payment_modules->pre_confirmation_check();
 }
@@ -152,10 +155,7 @@ if (is_array($payment_modules->modules)) {
 		<div class="kt-portlet">
 			<div class="kt-portlet__head">
 				<div class="kt-portlet__head-label">
-                    <font class="kt-portlet__head-title"><?php echo gettext("Please confirm your order"); 
-					
-					//echo $customer_res;
-					?></font>
+                    <font class="kt-portlet__head-title"><?php echo gettext("Please confirm your order"); ?></font>
 				</div>
 			</div>
 			<!--begin::Form-->
@@ -175,7 +175,7 @@ if (is_array($payment_modules->modules)) {
                                     <?php
                                         echo round($amount,2)." ".strtoupper(BASE_CURRENCY);
                                         if ($two_currency) {
-                                           // echo " - ".round($amount/$mycur,2)." ".strtoupper($_SESSION['currency']);
+                                           echo " - ".round($amount/$mycur,2)." ".strtoupper($_SESSION['currency']);
                                         }
                                     ?>
                                 </td>
@@ -199,9 +199,9 @@ if (is_array($payment_modules->modules)) {
                                    echo round($total_amount,2)." ".strtoupper(BASE_CURRENCY);
                                 
 									
-									//$pay_amount = round($total_amount / $mycur, 2);
-									//echo $pay_amount;
-                                   // echo " - ".round($total_amount / $mycur, 2)." ".strtoupper($_SESSION['currency']);
+									$pay_amount = round($total_amount / $mycur, 2);
+									echo $pay_amount;
+                                   echo " - ".round($total_amount / $mycur, 2)." ".strtoupper($_SESSION['currency']);
                                 
                             ?>
                         </td>
@@ -246,7 +246,28 @@ if (is_array($payment_modules->modules)) {
 </div>
 </div>
 
+<!-- If you want to use the popup integration, -->
+<script>
+    var obj = {};
+    obj.cus_name = $('#customer_name').val();
+    obj.cus_phone = $('#mobile').val();
+    obj.cus_email = $('#email').val();
+    obj.cus_addr1 = $('#address').val();
+    obj.amount = $('#total_amount').val();
 
+    $('#sslczPayBtn').prop('postdata', obj);
+
+    (function (window, document) {
+        var loader = function () {
+            var script = document.createElement("script"), tag = document.getElementsByTagName("script")[0];
+            //script.src = "https://seamless-epay.sslcommerz.com/embed.min.js?" + Math.random().toString(36).substring(7); // NOTE: USE THIS FOR LIVE
+            script.src = "https://sandbox.sslcommerz.com/embed.min.js?" + Math.random().toString(36).substring(7); // NOTE: USE THIS FOR SANDBOX
+            tag.parentNode.insertBefore(script, tag);
+        };
+
+        window.addEventListener ? window.addEventListener("load", loader, false) : window.attachEvent("onload", loader);
+    })(window, document);
+</script>
 <?php
 
 // #### FOOTER SECTION
