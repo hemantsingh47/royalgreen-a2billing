@@ -138,31 +138,32 @@ class sslcommerz
         return false;
     }
 
-    public function get_OrderStatus($status = 'Failed')
+    public function getSSLCommerzOrderStatus($status = 'Failed')
     {
         switch ($status) {
-            case "Failed":
+            case "FAILED":
                 return -2;
             break;
-            case "Denied":
+            case "UNATTEMPTED":
                 return -1;
             break;
-            case "Pending":
+            case "PENDING":
                 return 0;
             break;
-            case "In-Progress":
+            case "Processing":
+            case "PROCESSING":
                 return 1;
             break;
-            case "Completed":
+            case "VALID":
                 return 2;
             break;
-            case "Processed":
+            case "VALIDATED":
                 return 3;
             break;
-            case "Refunded":
+            case "EXPIRED":
                 return 4;
             break;
-            case "Nogateway":
+            case "CANCELLED":
                 return 6;
             break;
             default:
@@ -298,7 +299,7 @@ class sslcommerz
             $post_data['store_id'] = $this->store_id;
             $post_data['store_pass'] = $this->store_password;
 
-            if ($this->SSLCOMMERZ_hash_verify($this->getStorePassword(), $post_data)) {
+            if ($this->SSLCOMMERZ_hash_verify($this->store_password, $post_data)) {
 
                 $val_id = urlencode($post_data['val_id']);
                 $store_id = urlencode($this->store_id);

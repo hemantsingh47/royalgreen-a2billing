@@ -231,5 +231,14 @@ Class payment {
       }
     }
 
+    public function getSSLCommerzOrderStatus($status)
+    {
+        if (is_array($this->modules)) {
+        if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
+          return $GLOBALS[$this->selected_module]->getSSLCommerzOrderStatus($status);
+        }
+      }
+    }
+
     
   }

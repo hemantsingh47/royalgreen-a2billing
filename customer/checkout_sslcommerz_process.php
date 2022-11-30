@@ -1,14 +1,5 @@
 <?php
 include './lib/customer.defines.php';
-
-getpost_ifset(array('tran_id', 'status', 'value_a', 'value_b', 'currency', 'failedreason', 'sessionkey', 'gw', 'GatewayPageURL', 'desc', 'amount'));
-$transactionID = $tran_id;
-$key = $value_a;
-$sess_id = $value_b;
-$trans_str = "transactionID=$transactionID";
-
-write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." SSLCOMMERZ processig : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
-
 include './lib/customer.module.access.php';
 include './lib/Form/Class.FormHandler.inc.php';
 include './lib/epayment/classes/payment.php';
@@ -18,6 +9,15 @@ include './lib/epayment/includes/general.php';
 include './lib/epayment/includes/html_output.php';
 include './lib/epayment/includes/configure.php';
 include './lib/epayment/includes/loadconfiguration.php';
+
+getpost_ifset(array('tran_id', 'status', 'value_a', 'value_b', 'currency', 'failedreason', 'sessionkey', 'gw', 'GatewayPageURL', 'desc', 'amount'));
+$transactionID = $tran_id;
+$key = $value_a;
+$sess_id = $value_b;
+$trans_str = "transactionID=$transactionID";
+
+write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." SSLCOMMERZ processing : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
+
 
 $DBHandle_max  = DbConnect();
 $paymentTable = new Table();
@@ -38,6 +38,9 @@ $transaction_data = reset($transaction_data);
 $card_id = $transaction_data['cardid'];
 $item_id = $transaction_data['item_id'];
 $item_type = $transaction_data['item_type'];
+if (empty($item_type)) {
+    $item_type = '';
+}
 // $amount = $transaction_data['amount'];
 // $currency = $transaction_data['currency'];
 $payment_method = $transaction_data['paymentmethod'];
@@ -45,35 +48,25 @@ $payment_method = $transaction_data['paymentmethod'];
 $payment_module = new payment($payment_method);
 
 $success = false;
-$errcode = 0;
-$QUERY = "UPDATE cc_epayment_log SET status = 0 WHERE id = ".$transactionID; //pending case
-
-if ($status == 'Canceled') {
-    $QUERY = "UPDATE cc_epayment_log SET status = 5 WHERE id = ".$transactionID;
-    $errcode = 5;
-}
+$orderStatus = $payment_module->get_OrderStatus($status);
+$statusmessage  = $status;
+$QUERY = "UPDATE cc_epayment_log SET status = '".$orderStatus."' WHERE id = ".$transactionID;
 
 if ($status == 'VALID') {
-    $validated = $payment_module->orderValidate($transactionID, $amount, $currency, $_POST);
+    write_log(LOGFILE_EPAYMENT, basename(__FILE__).
+        ' line:'.__LINE__."- $trans_str : VALID PAYMENT STATUS , TRANSACTION ID =".$transactionID);
+    $validated = $payment_module->order_validate($transactionID, $amount, $currency, $_POST);
     if ($validated) {
+        write_log(LOGFILE_EPAYMENT, basename(__FILE__).
+        ' line:'.__LINE__."- $trans_str : VALID PAYMENT TRANSACTION ID , TRANSACTION ID =".$transactionID.", ERROR = ".$payment_module->error);
         $success = true;
-        $errcode = 2;
-        $QUERY = "UPDATE cc_epayment_log SET status = 2 WHERE id = ".$transactionID;
+        
     } else {
         write_log(LOGFILE_EPAYMENT, basename(__FILE__).
         ' line:'.__LINE__."- $trans_str : ERROR FOR VALIDATING TRANSACTION ID , TRANSACTION ID =".$transactionID.", ERROR = ".$payment_module->error);
         $QUERY = "UPDATE cc_epayment_log SET status = '-2' WHERE id = ".$transactionID;
-        $errcode = -2;
+        $orderStatus = -2;
     }
-}
-if ($status == 'Processing') {
-    $QUERY = "UPDATE cc_epayment_log SET status = '3' WHERE id = ".$transactionID;
-    $errcode = 3;
-}
-
-if ($status == 'Falied') {
-    $QUERY = "UPDATE cc_epayment_log SET status = '-2' WHERE id = ".$transactionID;
-    $errcode = -2;
 }
 
 //Update the Transaction Status
@@ -82,11 +75,11 @@ write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- QUERY = $QUE
 $paymentTable->SQLExec ($DBHandle_max, $QUERY);
 
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).
-    ' line:'.__LINE__."- $trans_str : SSLCOMMERZ PAYMENT STATUS = ".$row['status']." : TRANSACTIONID = ".$transactionID.
+    ' line:'.__LINE__."- $trans_str : SSLCOMMERZ PAYMENT STATUS = ".$status." : TRANSACTIONID = ".$transactionID.
     " FROM ".$payment_method."; FOR CUSTOMER ID ".$card_id."; OF AMOUNT ".$amount);
 
 if(!$success) {
-    Header ("Location: checkout_success.php?errcode=".$errcode);
+    Header ("Location: checkout_success.php?errcode=".$orderStatus);
     exit();
 }
 
@@ -105,7 +98,7 @@ $amount_paid = convert_currency($currencies_list, $currAmount, $currCurrency, BA
 $amount_without_vat = $amount_paid / (1+$VAT/100);
 
 
-$newkey = securitykey(EPAYMENT_TRANSACTION_KEY, $transaction_data['creationdate']."^".$transactionID."^".$amount."^".$card_id."^".$item_id."^".$item_type);
+$newkey = securitykey(EPAYMENT_TRANSACTION_KEY, $transaction_data['creationdate']."^".$transactionID."^".$transaction_data['amount']."^".$card_id."^".$item_id."^".$item_type);
 if ($newkey == $key) {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."----------- Transaction Key Verified ------------");
 } else {
@@ -129,7 +122,7 @@ if ($resmax) {
 $customer_info = $resmax -> fetchRow();
 $nowDate = date("Y-m-d H:i:s");
 $pmodule = $payment_method;
-$orderStatus = $payment_modules->get_OrderStatus($errcode);
+
 
 if (empty($item_type)) {
     $transaction_type = 'balance';
@@ -138,7 +131,7 @@ if (empty($item_type)) {
     //Check amount
     $table_invoice_item = new Table("cc_invoice_item","COALESCE(SUM(price*(1+(vat/100))),0)");
     $clause_invoice_item = "id_invoice = ".$item_id;
-    $result= $table_invoice_item -> Get_list($DBHandle,$clause_invoice_item);
+    $result= $table_invoice_item -> Get_list($DBHandle_max,$clause_invoice_item);
     $inv_amount = ceil($result[0][0] * 100) / 100;
     $inv_vat_amount= $inv_amount * $VAT / 100;
     $inv_total_amount = $inv_amount + ($inv_amount * $VAT / 100);
@@ -162,7 +155,7 @@ if ($customer_info[0] > 0 && $orderStatus == 2) {
     /* CHECK IF THE CARDNUMBER IS ON THE DATABASE */
     $instance_table_card = new Table("cc_card", "username, id");
     $FG_TABLE_CLAUSE_card = " username='".$customer_info[0]."'";
-    $list_tariff_card = $instance_table_card -> Get_list ($DBHandle, $FG_TABLE_CLAUSE_card, null, null, null, null, null, null);
+    $list_tariff_card = $instance_table_card -> Get_list ($DBHandle_max, $FG_TABLE_CLAUSE_card, null, null, null, null, null, null);
     if ($customer_info[0] == $list_tariff_card[0][0]) {
         $id = $list_tariff_card[0][1];
     }
@@ -178,11 +171,11 @@ if ($id > 0) {
         $instance_table = new Table("cc_card", "username, id");
         $param_update .= " credit = credit+'".$amount_without_vat."'";
         $FG_EDITION_CLAUSE = " id='$id'";
-        $instance_table -> Update_table ($DBHandle, $param_update, $FG_EDITION_CLAUSE, $func_table = null);
+        $instance_table -> Update_table ($DBHandle_max, $param_update, $FG_EDITION_CLAUSE, $func_table = null);
         write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : Update_table cc_card : $param_update - CLAUSE : $FG_EDITION_CLAUSE");
 
         $table_transaction = new Table();
-        $result_agent = $table_transaction -> SQLExec($DBHandle,"SELECT cc_card_group.id_agent FROM cc_card LEFT JOIN cc_card_group ON cc_card_group.id = cc_card.id_group WHERE cc_card.id = $id");
+        $result_agent = $table_transaction -> SQLExec($DBHandle_max,"SELECT cc_card_group.id_agent FROM cc_card LEFT JOIN cc_card_group ON cc_card_group.id = cc_card.id_group WHERE cc_card.id = $id");
         if (is_array($result_agent) && !is_null($result_agent[0]['id_agent']) && $result_agent[0]['id_agent']>0 ) {
             $id_agent =  $result_agent[0]['id_agent'];
             $id_agent_insert = "'$id_agent'";
@@ -194,13 +187,13 @@ if ($id > 0) {
         $field_insert = "date, credit, card_id, description, agent_id";
         $value_insert = "'$nowDate', '".$amount_without_vat."', '$id', '".$payment_method."',$id_agent_insert";
         $instance_sub_table = new Table("cc_logrefill", $field_insert);
-        $id_logrefill = $instance_sub_table -> Add_table ($DBHandle, $value_insert, null, null, 'id');
+        $id_logrefill = $instance_sub_table -> Add_table ($DBHandle_max, $value_insert, null, null, 'id');
         write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : Add_table cc_logrefill : $field_insert - VALUES $value_insert");
 
         $field_insert = "date, payment, card_id, id_logrefill, description, agent_id";
         $value_insert = "'$nowDate', '".$amount_paid."', '$id', '$id_logrefill', '".$payment_method."',$id_agent_insert ";
         $instance_sub_table = new Table("cc_logpayment", $field_insert);
-        $id_payment = $instance_sub_table -> Add_table ($DBHandle, $value_insert, null, null,"id");
+        $id_payment = $instance_sub_table -> Add_table ($DBHandle_max, $value_insert, null, null,"id");
         write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : Add_table cc_logpayment : $field_insert - VALUES $value_insert");
 
         //ADD an INVOICE
@@ -212,7 +205,7 @@ if ($id > 0) {
         $description = gettext("Invoice for refill");
         $value_insert = " '$date' , '$card_id', '$title','$reference','$description',1,1 ";
         $instance_table = new Table("cc_invoice", $field_insert);
-        $id_invoice = $instance_table -> Add_table ($DBHandle, $value_insert, null, null,"id");
+        $id_invoice = $instance_table -> Add_table ($DBHandle_max, $value_insert, null, null,"id");
         //load vat of this card
         if (!empty($id_invoice)&& is_numeric($id_invoice)) {
             $amount = $amount_without_vat;
@@ -220,13 +213,13 @@ if ($id > 0) {
             $field_insert = "date, id_invoice ,price,vat, description";
             $instance_table = new Table("cc_invoice_item", $field_insert);
             $value_insert = " '$date' , '$id_invoice', '$amount','$VAT','$description' ";
-            $instance_table -> Add_table ($DBHandle, $value_insert, null, null,"id");
+            $instance_table -> Add_table ($DBHandle_max, $value_insert, null, null,"id");
         }
         //link payment to this invoice
         $table_payment_invoice = new Table("cc_invoice_payment", "*");
         $fields = " id_invoice , id_payment";
         $values = " $id_invoice, $id_payment	";
-        $table_payment_invoice->Add_table($DBHandle, $values, $fields);
+        $table_payment_invoice->Add_table($DBHandle_max, $values, $fields);
         //END INVOICE
 
         // Agent commision
@@ -236,7 +229,7 @@ if ($id > 0) {
             //test if the agent exist and get its commission
             $agent_table = new Table("cc_agent", "commission");
             $agent_clause = "id = ".$id_agent;
-            $result_agent= $agent_table -> Get_list($DBHandle,$agent_clause);
+            $result_agent= $agent_table -> Get_list($DBHandle_max,$agent_clause);
             if (is_array($result_agent) && is_numeric($result_agent[0]['commission']) && $result_agent[0]['commission']>0) {
 
                 $field_insert = "id_payment, id_card, amount,description,id_agent,commission_percent,commission_type";
@@ -251,13 +244,13 @@ if ($id > 0) {
 
                 $value_insert = "'".$id_payment."', '$id', '$commission','$description_commission','$id_agent','$commission_percent','0'";
                 $commission_table = new Table("cc_agent_commission", $field_insert);
-                $id_commission = $commission_table -> Add_table ($DBHandle, $value_insert, null, null,"id");
+                $id_commission = $commission_table -> Add_table ($DBHandle_max, $value_insert, null, null,"id");
                 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : Add_table cc_agent_commission : $field_insert - VALUES $value_insert");
 
                 $table_agent = new Table('cc_agent');
                 $param_update_agent = "com_balance = com_balance + '".$commission."'";
                 $clause_update_agent = " id='".$id_agent."'";
-                $table_agent -> Update_table ($DBHandle, $param_update_agent, $clause_update_agent, $func_table = null);
+                $table_agent -> Update_table ($DBHandle_max, $param_update_agent, $clause_update_agent, $func_table = null);
                 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : Update_table cc_agent : $param_update_agent - CLAUSE : $clause_update_agent");
             }
 
@@ -267,7 +260,7 @@ if ($id > 0) {
         if ($item_id > 0) {
             $invoice_table = new Table('cc_invoice','reference');
             $invoice_clause = "id = ".$item_id;
-            $result_invoice = $invoice_table->Get_list($DBHandle,$invoice_clause);
+            $result_invoice = $invoice_table->Get_list($DBHandle_max,$invoice_clause);
 
             if (is_array($result_invoice) && sizeof($result_invoice)==1) {
                 $reference =$result_invoice[0][0];
@@ -275,7 +268,7 @@ if ($id > 0) {
                 $field_insert = "date, payment, card_id, description";
                 $value_insert = "'$nowDate', '".$amount_paid."', '$id', '(".$payment_method.") ".gettext('Invoice Payment Ref: ')."$reference '";
                 $instance_sub_table = new Table("cc_logpayment", $field_insert);
-                $id_payment = $instance_sub_table -> Add_table ($DBHandle, $value_insert, null, null,"id");
+                $id_payment = $instance_sub_table -> Add_table ($DBHandle_max, $value_insert, null, null,"id");
                 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : Add_table cc_logpayment : $field_insert - VALUES $value_insert");
 
                 //update invoice to paid
@@ -287,14 +280,14 @@ if ($id > 0) {
                     if ($item -> getExtType() == 'DID') {
                         $QUERY = "UPDATE cc_did_use set month_payed = month_payed+1 , reminded = 0 WHERE id_did = '" . $item -> getExtId() .
                                  "' AND activated = 1 AND ( releasedate IS NULL OR releasedate < '1984-01-01 00:00:00') ";
-                        $instance_table->SQLExec($DBHandle, $QUERY, 0);
+                        $instance_table->SQLExec($DBHandle_max, $QUERY, 0);
                     }
                     if ($item -> getExtType() == 'SUBSCR') {
                         //Load subscription
                         write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- Type SUBSCR");
                         $table_subsc = new Table('cc_card_subscription','paid_status');
                         $subscr_clause = "id = ".$item -> getExtId();
-                        $result_subscr = $table_subsc -> Get_list($DBHandle,$subscr_clause);
+                        $result_subscr = $table_subsc -> Get_list($DBHandle_max,$subscr_clause);
                         if (is_array($result_subscr)) {
                             $subscription = $result_subscr[0];
                             write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- cc_card_subscription paid_status : ".$subscription['paid_status']);
@@ -318,20 +311,20 @@ if ($id > 0) {
 
                                 $next_bill_date = date("Y-m-d",strtotime("$next_limite_pay_date - $billdaybefor_anniversery day")) ;
                                 $QUERY = "UPDATE cc_card SET status=1 WHERE id=$id";
-                                $result = $instance_table->SQLExec($DBHandle, $QUERY, 0);
+                                $result = $instance_table->SQLExec($DBHandle_max, $QUERY, 0);
                                 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- QUERY : $QUERY - RESULT : $result");
 
                                 $QUERY = "UPDATE cc_card_subscription SET paid_status = 2, startdate = '$startdate' ,limit_pay_date = '$next_limite_pay_date', 	next_billing_date ='$next_bill_date' WHERE id=" . $item -> getExtId();
                                 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- QUERY : $QUERY");
-                                $instance_table->SQLExec($DBHandle, $QUERY, 0);
+                                $instance_table->SQLExec($DBHandle_max, $QUERY, 0);
                             } else {
                                 $QUERY = "UPDATE cc_card SET status=1 WHERE id=$id";
-                                $result = $instance_table->SQLExec($DBHandle, $QUERY, 0);
+                                $result = $instance_table->SQLExec($DBHandle_max, $QUERY, 0);
                                 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- QUERY : $QUERY - RESULT : $result");
 
                                 $QUERY = "UPDATE cc_card_subscription SET paid_status = 2 WHERE id=". $item -> getExtId();
                                 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- QUERY : $QUERY");
-                                $instance_table->SQLExec($DBHandle, $QUERY, 0);
+                                $instance_table->SQLExec($DBHandle_max, $QUERY, 0);
                             }
                         }
                     }
@@ -347,23 +340,7 @@ $QUERY = "UPDATE cc_epayment_log SET status = 1, transaction_detail ='".addslash
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- QUERY = $QUERY");
 $paymentTable->SQLExec ($DBHandle_max, $QUERY);
 
-switch ($orderStatus) {
-    case -2:
-        $statusmessage = "Failed";
-        break;
-    case -1:
-        $statusmessage = "Denied";
-        break;
-    case 0:
-        $statusmessage = "Pending";
-        break;
-    case 1:
-        $statusmessage = "In-Progress";
-        break;
-    case 2:
-        $statusmessage = "Successful";
-        break;
-}
+
 
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : EPAYMENT ORDER STATUS  = ".$statusmessage);
 
@@ -398,7 +375,7 @@ if (preg_match("/^[a-z]+[a-z0-9_-]*(([.]{1})|([a-z0-9_-]*))[a-z0-9_-]+[@]{1}[a-z
 }
 
 // load the after_process function from the payment modules
-$payment_modules->after_process();
+$payment_module->after_process();
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : EPAYMENT ORDER STATUS ID = ".$orderStatus." ".$statusmessage);
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ----EPAYMENT TRANSACTION END----");
 

@@ -122,6 +122,7 @@ echo tep_draw_form('checkout_confirmation.php', $form_action_url, 'post', null, 
 if (is_array($payment_modules->modules)) {
     echo $payment_modules->process_button($transaction_no, $key);
 }
+
 ?>
 
 <!-- begin:: Subheader -->
@@ -147,6 +148,7 @@ if (is_array($payment_modules->modules)) {
 		<div class="kt-portlet">
 			<div class="kt-portlet__head">
 				<div class="kt-portlet__head-label">
+                   
                     <font class="kt-portlet__head-title"><?php echo gettext("Please confirm your order"); ?></font>
 				</div>
 			</div>
@@ -239,7 +241,7 @@ if (is_array($payment_modules->modules)) {
 </div>
 
 <!-- If you want to use the popup integration, -->
-<script>
+<!-- <script>
     var obj = {};
     obj.cus_name = $('#customer_name').val();
     obj.cus_phone = $('#mobile').val();
@@ -259,7 +261,7 @@ if (is_array($payment_modules->modules)) {
 
         window.addEventListener ? window.addEventListener("load", loader, false) : window.attachEvent("onload", loader);
     })(window, document);
-</script>
+</script> -->
 <?php
 
 // #### FOOTER SECTION

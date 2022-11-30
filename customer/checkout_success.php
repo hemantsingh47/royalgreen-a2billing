@@ -75,7 +75,7 @@ $smarty->display( 'main.tpl');
             echo gettext("We are sorry your transaction is pending.");
           break;
           case 1:
-              write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." ERROR TRANSACTION INPROGRESS");
+              write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."  TRANSACTION INPROGRESS");
             echo gettext("Your transaction is in progress.");
           break;
           case 2:
@@ -85,11 +85,11 @@ $smarty->display( 'main.tpl');
               write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." TRANSACTION PROCESSED");
             echo gettext("Your transaction was processed.");
           break;
-          case 5:
+          case 6:
               write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." TRANSACTION CANCELED");
             echo gettext("Your transaction was Cancelled.");
           break;
-          case 6:
+          case 5:
               write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." NO SUCH PAYMENT GATEWAY");
             echo gettext("No such paynment gateway found.");
           break;
