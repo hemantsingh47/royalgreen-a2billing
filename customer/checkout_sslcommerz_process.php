@@ -48,12 +48,12 @@ $success = false;
 $errcode = 0;
 $QUERY = "UPDATE cc_epayment_log SET status = 0 WHERE id = ".$transactionID; //pending case
 
-if ($row['status'] == 'Canceled') {
+if ($status == 'Canceled') {
     $QUERY = "UPDATE cc_epayment_log SET status = 5 WHERE id = ".$transactionID;
     $errcode = 5;
 }
 
-if ($row['status'] == 'VALID') {
+if ($status == 'VALID') {
     $validated = $payment_module->orderValidate($transactionID, $amount, $currency, $_POST);
     if ($validated) {
         $success = true;
@@ -66,12 +66,12 @@ if ($row['status'] == 'VALID') {
         $errcode = -2;
     }
 }
-if ($row['status'] == 'Processing') {
+if ($status == 'Processing') {
     $QUERY = "UPDATE cc_epayment_log SET status = '3' WHERE id = ".$transactionID;
     $errcode = 3;
 }
 
-if ($row['status'] == 'Falied') {
+if ($status == 'Falied') {
     $QUERY = "UPDATE cc_epayment_log SET status = '-2' WHERE id = ".$transactionID;
     $errcode = -2;
 }
