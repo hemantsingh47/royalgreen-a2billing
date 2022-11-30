@@ -81,7 +81,19 @@ $smarty->display( 'main.tpl');
           case 2:
               write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." TRANSACTION SUCCESSFUL");
             echo gettext("Your transaction was successful.");
+          case 3:
+              write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." TRANSACTION PROCESSED");
+            echo gettext("Your transaction was processed.");
           break;
+          case 5:
+              write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." TRANSACTION CANCELED");
+            echo gettext("Your transaction was Cancelled.");
+          break;
+          case 6:
+              write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." NO SUCH PAYMENT GATEWAY");
+            echo gettext("No such paynment gateway found.");
+          break;
+          
       }
     ?>  &nbsp;
     </td>

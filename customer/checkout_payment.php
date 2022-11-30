@@ -26,8 +26,9 @@ if ( !isset($currencies_list[strtoupper($_SESSION['currency'])][2]) || !is_numer
 } else {
     $mycur = $currencies_list[strtoupper($_SESSION['currency'])][2];
     $display_currency =strtoupper($_SESSION['currency']);
-    if (strtoupper($_SESSION['currency'])!=strtoupper(BASE_CURRENCY))
+    if (strtoupper($_SESSION['currency'])!=strtoupper(BASE_CURRENCY)) {
         $two_currency=true;
+    }
 }
 
 $HD_Form = new FormHandler("cc_payment_methods","payment_method");
@@ -58,11 +59,7 @@ if ($item_type == "invoice" && is_numeric($item_id)) {
 $smarty->display( 'main.tpl');
 
 $HD_Form -> create_toppage ($form_action);
-
 $payment_modules = new payment;
-
- 
-
 ?>
 <script language="javascript">
 
@@ -227,17 +224,11 @@ function rowOutEffect(object) {
                 <td class="main" width="100%" colspan="3"><?php echo "This is currently the only payment method available to use on this order."; ?></td>
             </tr>
 
-            <?php
-                }
-
-                $radio_buttons = 0;
-                for ($i=0, $n=sizeof($selection); $i<$n; $i++) {
+            <?php }
+            $radio_buttons = 0;
+            for ($i=0, $n=sizeof($selection); $i<$n; $i++) {
             ?>
-
-            <tr>
-                <td colspan="3">&nbsp; </td>
-            </tr>
-
+            <tr><td colspan="3">&nbsp; </td></tr>
             <?php
                 if ( ($selection[$i]['id'] == $payment) || ($n == 1) ) {
                   echo '             <tr id="defaultSelected" class="moduleRowSelected" onmouseover="rowOverEffect(this)" onmouseout="rowOutEffect(this)" onclick="selectRowEffect(this, ' . $radio_buttons . ')">' . "\n";
@@ -263,44 +254,33 @@ function rowOutEffect(object) {
         <td colspan="3">&nbsp;</td>
         <td >
             <table border="0" width="100%" cellspacing="0" cellpadding="2" class="" style="background:#ffffff">
-
-<?php
-    if (isset($selection[$i]['error'])) {
-?>
-      <tr>
-            <td class="main" ><?php echo $selection[$i]['error']; ?></td>
-      </tr>
-<?php
-    } elseif (isset($selection[$i]['fields']) && is_array($selection[$i]['fields'])) {
-?>
-      <tr>
-            <td ><table border="0" cellspacing="0" cellpadding="2">
-
-<?php
-      for ($j=0, $n2=sizeof($selection[$i]['fields']); $j<$n2; $j++) {
-?>
-          <tr>
-            <td width="10">&nbsp;</td>
-            <td class="main"><?php echo $selection[$i]['fields'][$j]['title']; ?></td>
-            <td>&nbsp;</td>
-            <td class="main"><?php echo $selection[$i]['fields'][$j]['field']; ?></td>
-          </tr>
-<?php
-      }
-?>
-            </table></td>
-            <td>&nbsp;</td>
-          </tr>
-<?php
-    }
-?>
-        </table></td>
+            <?php if (isset($selection[$i]['error'])) { ?>
+                <tr><td class="main" ><?php echo $selection[$i]['error']; ?></td></tr>
+            <?php } elseif (isset($selection[$i]['fields']) && is_array($selection[$i]['fields'])) { ?>
+                <tr>
+                    <td >
+                        <table border="0" cellspacing="0" cellpadding="2">
+                        <?php for ($j=0, $n2=sizeof($selection[$i]['fields']); $j<$n2; $j++) { ?>
+                          <tr>
+                            <td width="10">&nbsp;</td>
+                            <td class="main"><?php echo $selection[$i]['fields'][$j]['title']; ?></td>
+                            <td>&nbsp;</td>
+                            <td class="main"><?php echo $selection[$i]['fields'][$j]['field']; ?></td>
+                          </tr>
+                        <?php } ?>
+                        </table>
+                    </td>
+                    <td>&nbsp;</td>
+                </tr>
+            <?php } ?>
+            </table>
+        </td>
         <td>&nbsp;</td>
       </tr>
-<?php
-    $radio_buttons++;
-  }
-?>
+        <?php
+            $radio_buttons++;
+          }
+        ?>
       </table>
       <br>
       <?php  if (sizeof($selection) > 0) { ?>

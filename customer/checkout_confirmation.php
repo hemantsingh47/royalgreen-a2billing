@@ -102,16 +102,8 @@ if (empty($transaction_no)) {
 $HD_Form -> create_toppage ($form_action);
 
 $payment_modules = new payment($payment);
-echo '<pre>';
-print_r($payment_modules);
-echo '</pre>';
 $order = new order($amount_string);
-echo '<pre>';
-// print_r($order);
-print_r(SSLCOMMERZ_IS_SANDBOX);
-print_r(SSLCOMMERZ_STORE_ID);
-print_r(SSLCOMMERZ_STORE_PASSWORD);
-echo '</pre>';
+
 if (is_array($payment_modules->modules)) {
     $payment_modules->pre_confirmation_check();
 }
@@ -199,9 +191,9 @@ if (is_array($payment_modules->modules)) {
                                    echo round($total_amount,2)." ".strtoupper(BASE_CURRENCY);
                                 
 									
-									$pay_amount = round($total_amount / $mycur, 2);
-									echo $pay_amount;
-                                   echo " - ".round($total_amount / $mycur, 2)." ".strtoupper($_SESSION['currency']);
+								// 	$pay_amount = round($total_amount / $mycur, 2);
+								// 	echo $pay_amount;
+                                   // echo " - ".round($total_amount / $mycur, 2)." ".strtoupper($_SESSION['currency']);
                                 
                             ?>
                         </td>

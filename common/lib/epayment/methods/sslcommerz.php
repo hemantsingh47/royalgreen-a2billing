@@ -10,7 +10,7 @@ class sslcommerz
     /**
      * @var string
      */
-    private $error;
+    public $error;
  
     public $allowed_currencies = array( 'BDT', 'SGD', 'INR', 'MYR', 'CAD', 'EUR', 'GBP', 'JPY', 'USD', 'MXN', 'AUD', 'NZD', 'BRL');
 
@@ -25,10 +25,10 @@ class sslcommerz
         $this->sort_order       = 1;
         $this->enabled          = ((MODULE_PAYMENT_SSLCOMMERZ_STATUS == 'True') ? true : false);
         $this->mode             = ((SSLCOMMERZ_IS_SANDBOX == 'TEST') ? test : live);
-        $this->success_url      = PROJECT_PATH.'/pg_redirection/success.php';
-        $this->failed_url       = PROJECT_PATH.'/pg_redirection/fail.php';
-        $this->cancel_url       = PROJECT_PATH.'/pg_redirection/cancel.php', //your cancel url
-        $this->ipn_url          = PROJECT_PATH.'/pg_redirection/ipn.php', // your ipn url
+        $this->success_url      = PROJECT_PATH.DIR_WS_HTTPS_CATALOG.'checkout_sslcommerz_process.php';
+        $this->failed_url       = PROJECT_PATH.DIR_WS_HTTPS_CATALOG.'checkout_sslcommerz_process.php';
+        $this->cancel_url       = PROJECT_PATH.DIR_WS_HTTPS_CATALOG.'checkout_sslcommerz_process.php'; //your cancel url
+        $this->ipn_url          = PROJECT_PATH.DIR_WS_HTTPS_CATALOG.'checkout_sslcommerz_ipn.php'; // your ipn url
         $this->api_domain       = (SSLCOMMERZ_IS_SANDBOX == 'TEST')? SSLCOMMERZ_TEST_PAYMENT_URL: SSLCOMMERZ_LIVE_PAYMENT_URL;
         $this->store_id         = SSLCOMMERZ_STORE_ID;
         $this->store_password   = SSLCOMMERZ_STORE_PASSWORD;
@@ -36,6 +36,7 @@ class sslcommerz
         $this->order_validate   = "/validator/api/validationserverAPI.php";
         $this->connect_localhost = false;
         $this->verify_hash      =  true;
+        $this->form_action_url  = PROJECT_PATH.DIR_WS_HTTPS_CATALOG.'checkout_sslcommerz_hosted.php';
     }
 
     // class methods
@@ -94,22 +95,18 @@ class sslcommerz
         }
         $currencyObject = new currencies();
         $process_button_string = 
-            // tep_draw_hidden_field('cmd', '_xclick') .
-            // tep_draw_hidden_field('business', MODULE_PAYMENT_STRIPE_ID) .
             // tep_draw_hidden_field('item_name', STORE_NAME) .
-            // tep_draw_hidden_field('rm', '2') .
-            // tep_draw_hidden_field('LC', 'UK') .
-            // tep_draw_hidden_field('country', 'UK') .
-            // tep_draw_hidden_field('no_shipping', '1') .
+            tep_draw_hidden_field('no_shipping', '1') .
             tep_draw_hidden_field('transactionID', $transactionID) .
             tep_draw_hidden_field('key', $key) .
             tep_draw_hidden_field('PHPSESSID', session_id()) .
+            tep_draw_hidden_field('sess_id', session_id()) .
             tep_draw_hidden_field('amount', number_format($order->info['total'], $currencyObject->get_decimal_places($my_currency))) .
             //tep_draw_hidden_field('shipping', number_format($order->info['shipping_cost'] * $currencyObject->get_value($my_currency), $currencyObject->get_decimal_places($my_currency))) .
             tep_draw_hidden_field('currency_code', $my_currency) .
             // tep_draw_hidden_field('notify_url', tep_href_link("checkout_process.php?transactionID=".$transactionID."&sess_id=".session_id()."&key=".$key, '', 'SSL')) .
             // tep_draw_hidden_field('return', tep_href_link("userinfo.php", '', 'SSL')) .
-            // tep_draw_hidden_field('cancel_return', tep_href_link("userinfo.php", '', 'SSL'));
+            tep_draw_hidden_field('cancel_return', tep_href_link("userinfo.php", '', 'SSL'));
 
         return $process_button_string;
     }
@@ -141,12 +138,9 @@ class sslcommerz
         return false;
     }
 
-    public function get_OrderStatus()
+    public function get_OrderStatus($status = 'Failed')
     {
-        if ($_POST['payment_status']=="") {
-            return -2;
-        }
-        switch ($_POST['payment_status']) {
+        switch ($status) {
             case "Failed":
                 return -2;
             break;
@@ -154,7 +148,7 @@ class sslcommerz
                 return -1;
             break;
             case "Pending":
-                return -0;
+                return 0;
             break;
             case "In-Progress":
                 return 1;
@@ -168,8 +162,11 @@ class sslcommerz
             case "Refunded":
                 return 4;
             break;
+            case "Nogateway":
+                return 6;
+            break;
             default:
-              return 5;
+              return 5;//canceled
         }
     }
     public function after_process()
@@ -276,15 +273,12 @@ class sslcommerz
         exit();
     }
 
-    public function orderValidate($trx_id = '', $amount = 0, $currency = "BDT", $post_data)
+    public function order_validate($trx_id = '', $amount = 0, $currency = "BDT", $post_data)
     {
         if ($post_data == '' && $trx_id == '' && !is_array($post_data)) {
-            $this->error = "Please provide valid transaction ID and post request data";
-            return $this->error;
+            return false;
         }
-
         $validation = $this->validate($trx_id, $amount, $currency, $post_data);
-
         if ($validation) {
             return true;
         } else {
@@ -454,14 +448,13 @@ class sslcommerz
      * @param string $pattern
      * @return false|mixed|string
      */
-    public function makePayment(array $requestData, $type = 'checkout', $pattern = 'json')
+    public function make_payment(array $requestData, $type = 'checkout', $pattern = 'json')
     {
         if (empty($requestData)) {
             return "Please provide a valid information list about transaction with transaction id, amount, success url, fail url, cancel url, store id and pass at least";
         }
 
         $header = [];
-
         $this->setapi_url($this->api_domain . $this->make_payment);
 
         // Set the required/additional params
@@ -472,9 +465,7 @@ class sslcommerz
 
         // Now, call the Gateway API
         $response = $this->call_to_api($this->data, $header, $this->connect_localhost);
-
         $formattedResponse = $this->formatResponse($response, $type, $pattern); // Here we will define the response pattern
-
         if ($type == 'hosted') {
             if (isset($formattedResponse['GatewayPageURL']) && $formattedResponse['GatewayPageURL'] != '') {
                 $this->redirect($formattedResponse['GatewayPageURL']);
@@ -505,7 +496,7 @@ class sslcommerz
         $this->set_additional_info($requestData);
     }
 
-    public function setAuthenticationInfo()
+    protected function setAuthenticationInfo()
     {
         $this->data['store_id'] = $this->store_id;
         $this->data['store_passwd'] = $this->store_password;

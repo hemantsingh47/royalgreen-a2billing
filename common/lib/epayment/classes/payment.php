@@ -212,4 +212,24 @@ Class payment {
         }
       }
     }
+
+    public function make_payment($trans_id = 0, $key)
+    {
+      if (is_array($this->modules)) {
+        if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
+          return $GLOBALS[$this->selected_module]->make_payment($trans_id, $key);
+        }
+      }
+    }
+
+    public function order_validate($trx_id = '', $amount = 0, $currency = "BDT", $post_data)
+    {
+      if (is_array($this->modules)) {
+        if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
+          return $GLOBALS[$this->selected_module]->order_validate($trx_id, $amount, $currency, $post_data);
+        }
+      }
+    }
+
+    
   }

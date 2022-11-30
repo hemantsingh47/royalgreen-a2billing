@@ -1,56 +1,11 @@
 <?php
-
-/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
-
-/**
- * This file is part of A2Billing (http://www.a2billing.net/)
- *
- * A2Billing, Commercial Open Source Telecom Billing platform,
- * powered by Star2billing S.L. <http://www.star2billing.com/>
- *
- * @copyright   Copyright (C) 2004-2015 - Star2billing S.L.
- * @author      Belaid Arezqui <areski@gmail.com>
- * @license     http://www.fsf.org/licensing/licenses/agpl-3.0.html
- * @package     A2Billing
- *
- * Software License Agreement (GNU Affero General Public License)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- *
-**/
-
 include './lib/customer.defines.php';
 
-getpost_ifset(array('transactionID', 'sess_id', 'key', 'mc_currency', 'currency', 'md5sig', 'merchant_id', 'mb_amount', 'status', 'mb_currency', 'transaction_id', 'mc_fee', 'card_number'));
-
+getpost_ifset(array('tran_id', 'status', 'sess_id', 'key', 'currency', 'failedreason', 'sessionkey', 'gw', 'GatewayPageURL', 'desc', 'amount'));
+$transactionID = $tran_id;
 $trans_str = "transactionID=$transactionID";
 
-write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."EPAYMENT : $trans_str - transactionKey=$key \n -Vars: $transactionID : $sess_id : $transaction_id : $card_number");
-
-write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."EPAYMENT : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
-
-if (!intval($transactionID) > 0) {
-    write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : Wrong transactionID ($transactionID) provided in request");
-    exit();
-}
-
-if ($sess_id == "") {
-    write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : Error no session id provided in return url to payment module");
-    exit();
-}
-
+write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."SSLCOMMERZ processig : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
 
 include './lib/customer.module.access.php';
 include './lib/Form/Class.FormHandler.inc.php';
@@ -61,254 +16,100 @@ include './lib/epayment/includes/general.php';
 include './lib/epayment/includes/html_output.php';
 include './lib/epayment/includes/configure.php';
 include './lib/epayment/includes/loadconfiguration.php';
-include './lib/support/classes/invoice.php';
-include './lib/support/classes/invoiceItem.php';
 
 $DBHandle_max  = DbConnect();
 $paymentTable = new Table();
 
-if (DB_TYPE == "postgres") {
-    $NOW_2MIN = " creationdate <= (now() - interval '2 minute') ";
-} else {
-    $NOW_2MIN = " creationdate <= DATE_SUB(NOW(), INTERVAL 2 MINUTE) ";
-}
-
 // Status - New 0 ; Proceed 1 ; In Process 2
-$QUERY = "SELECT id, cardid, amount, vat, paymentmethod, cc_owner, cc_number, cc_expires, creationdate, status, cvv, credit_card_type, currency, item_id, item_type " .
+$QUERY = "SELECT * " .
          " FROM cc_epayment_log " .
-         " WHERE id = ".$transactionID." AND (status = 0 OR (status = 2 AND $NOW_2MIN))";
+         " WHERE id = ".$transactionID." AND (status = 0 OR status = 1 OR status = 2)";
+
 $transaction_data = $paymentTable->SQLExec ($DBHandle_max, $QUERY);
 if (empty($transaction_data) || (!is_array($transaction_data) && count($transaction_data) == 0)) {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).
-        ' line:'.__LINE__."- $trans_str : ERROR INVALID TRANSACTION ID PROVIDED, TRANSACTION ID =".$transactionID);
-    Header ("Location: userinfo.php");
+        ' line:'.__LINE__."- $trans_str : ERROR INVALID TRANSACTION ID WHILE RETURNING, TRANSACTION ID =".$transactionID);
+    Header ("Location: checkout_success.php?errcode=-2");
     exit();
-} else {
-    write_log(LOGFILE_EPAYMENT, basename(__FILE__).
-        ' line:'.__LINE__."- $trans_str : EPAYMENT RESPONSE: TRANSACTIONID = ".$transactionID.
-        " FROM ".$transaction_data[0]['paymentmethod']."; FOR CUSTOMER ID ".$transaction_data[0]['cardid']."; OF AMOUNT ".$transaction_data['amount']);
 }
 $transaction_data = reset($transaction_data);
-//Update the Transaction Status to 2
-$QUERY = "UPDATE cc_epayment_log SET status = 2 WHERE id = ".$transactionID;
+$card_id = $transaction_data['cardid'];
+$item_id = $transaction_data['item_id'];
+$item_type = $transaction_data['item_type'];
+// $amount = $transaction_data['amount'];
+// $currency = $transaction_data['currency'];
+$payment_method = $transaction_data['paymentmethod'];
+//DECLAIRING PAYMENT MODULE FOR FURTHER PROCESS
+$payment_module = new payment($payment_method);
+
+$success = false;
+$errcode = 0;
+$QUERY = "UPDATE cc_epayment_log SET status = 0 WHERE id = ".$transactionID; //pending case
+
+if ($row['status'] == 'Canceled') {
+    $QUERY = "UPDATE cc_epayment_log SET status = 5 WHERE id = ".$transactionID;
+    $errcode = 5;
+}
+
+if ($row['status'] == 'Processing') {
+    $validated = $payment_module->orderValidate($transactionID, $amount, $currency, $_POST);
+    if ($validated) {
+        $success = true;
+        $errcode = 2;
+        $QUERY = "UPDATE cc_epayment_log SET status = 2 WHERE id = ".$transactionID;
+    } else {
+        write_log(LOGFILE_EPAYMENT, basename(__FILE__).
+        ' line:'.__LINE__."- $trans_str : ERROR FOR VALIDATING TRANSACTION ID , TRANSACTION ID =".$transactionID.", ERROR = ".$payment_module->error);
+        $QUERY = "UPDATE cc_epayment_log SET status = '-2' WHERE id = ".$transactionID;
+        $errcode = -2;
+    }
+}
+
+if ($row['status'] == 'Falied') {
+    $QUERY = "UPDATE cc_epayment_log SET status = '-2' WHERE id = ".$transactionID;
+    $errcode = -2;
+}
+
+//Update the Transaction Status
+
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- QUERY = $QUERY");
 $paymentTable->SQLExec ($DBHandle_max, $QUERY);
 
-$card_id = $transaction_data['cardid'];
-$item_id = $transaction_data['item_id'];
-$amount = $transaction_data['amount'];
-$item_type = $transaction_data['item_type'];
-$payment_method = $transaction_data['paymentmethod'];
+write_log(LOGFILE_EPAYMENT, basename(__FILE__).
+    ' line:'.__LINE__."- $trans_str : SSLCOMMERZ PAYMENT STATUS = ".$row['status']." : TRANSACTIONID = ".$transactionID.
+    " FROM ".$payment_method."; FOR CUSTOMER ID ".$card_id."; OF AMOUNT ".$amount);
+
+if(!$success) {
+    Header ("Location: checkout_success.php?errcode=".$errcode);
+    exit();
+}
 
 
-echo '<pre>';
-print_r($transaction_data);
-echo "</pre>";
-die;
 $security_verify = true;
+
 $transaction_detail = serialize($_POST);
+
 
 $currencyObject = new currencies();
 $currencies_list = get_currencies();
+$VAT = !empty($transaction_data['vat']) && is_numeric($transaction_data['vat']) ? $transaction_data['vat']: 0;
 
-switch ($payment_method) {
-    case "paypal":
-        // Set currency & Amount
-        $currCurrency = $mc_currency;
-        if ($A2B->config['epayment_method']['charge_paypal_fee']==1) {
-            $currAmount = $amount ;
-        } else {
-            $currAmount = $amount - $mc_fee;
-        }
-
-        // Check amount is correct
-        if (intval($amount) != intval($_POST['mc_gross'])){
-            write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." -Amount Paypal is not matching");
-            $security_verify = false;
-            sleep(3);
-        }
-
-        // Reading POSTed data directly from $_POST causes serialization issues with array data in the POST.
-        // Instead, read raw POST data from the input stream.
-        $raw_post_data = file_get_contents('php://input');
-        $raw_post_array = explode('&', $raw_post_data);
-        $myPost = array();
-        foreach ($raw_post_array as $keyval) {
-          $keyval = explode ('=', $keyval);
-          if (count($keyval) == 2)
-             $myPost[$keyval[0]] = urldecode($keyval[1]);
-        }
-        // read the IPN message sent from PayPal and prepend 'cmd=_notify-validate'
-        $req = 'cmd=_notify-validate';
-        if(function_exists('get_magic_quotes_gpc')) {
-           $get_magic_quotes_exists = true;
-        }
-        foreach ($myPost as $lkey => $value) {
-           if($get_magic_quotes_exists == true && get_magic_quotes_gpc() == 1) {
-                $value = urlencode(stripslashes($value));
-           } else {
-                $value = urlencode($value);
-           }
-           $req .= "&$lkey=$value";
-        }
-
-        // Step 2: POST IPN data back to PayPal to validate
-
-        define("USE_PAYPAL_SANDBOX", false);
-        if (USE_PAYPAL_SANDBOX == true) {
-            $paypal_url = "https://www.sandbox.paypal.com/cgi-bin/webscr";
-        } else {
-            $paypal_url = "https://www.paypal.com/cgi-bin/webscr";
-        }
-        $ch = curl_init($paypal_url);
-        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $req);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-        curl_setopt($ch, CURLOPT_FORBID_REUSE, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
-        // In wamp-like environments that do not come bundled with root authority certificates,
-        // please download 'cacert.pem' from "http://curl.haxx.se/docs/caextract.html" and set
-        // the directory path of the certificate as shown below:
-        // curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__) . '/cacert.pem');
-        if( !($res = curl_exec($ch)) ) {
-            write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." Got " . curl_error($ch) . " when processing IPN data");
-            curl_close($ch);
-            exit;
-        }
-        curl_close($ch);
-
-        // inspect IPN validation result and act accordingly
-        if (strcmp ($res, "VERIFIED") == 0) {
-            // The IPN is verified, process it
-            write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-PAYPAL Transaction Verification Status: Verified ");
-        } else if (strcmp ($res, "INVALID") == 0) {
-            // IPN invalid, log for manual investigation
-            write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-PAYPAL Transaction Verification Status: Failed \nreq: $req\nres: $res");
-                $security_verify = false;
-        }
-
-        break;
-
-    case "moneybookers":
-        $currAmount = $amount;
-        $sec_string = $merchant_id.$transaction_id.strtoupper(md5(MONEYBOOKERS_SECRETWORD)).$mb_amount.$mb_currency.$status;
-        $sig_string = strtoupper(md5($sec_string));
-
-        if ($sig_string == $md5sig) {
-            write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-MoneyBookers Transaction Verification Status: Verified | md5sig =".$md5sig." Reproduced Signature = ".$sig_string." Generated String = ".$sec_string);
-        } else {
-            write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-MoneyBookers Transaction Verification Status: Failed | md5sig =".$md5sig." Reproduced Signature = ".$sig_string." Generated String = ".$sec_string);
-            $security_verify = false;
-        }
-        $currCurrency = $currency;
-        break;
-
-    case "authorizenet":
-        $currAmount = $amount;
-        $currCurrency = BASE_CURRENCY;
-        break;
-
-    case "plugnpay":
-        if (substr($card_number,0,4) != substr($transaction_data[6],0,4)) {
-            write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- PlugNPay Error : First 4digits of the card doesn't match with the one stored.");
-        }
-
-        $currCurrency 		= BASE_CURRENCY;
-        $currAmount 		= $amount;
-        $currAmount_usd		= convert_currency($currencies_list, $currAmount, BASE_CURRENCY, 'USD');
-
-        $pnp_post_values = array(
-            'publisher-name' => MODULE_PAYMENT_PLUGNPAY_LOGIN,
-            'mode'           => 'auth',
-            'ipaddress'      => $_SERVER['REMOTE_ADDR'],
-            // Metainfo
-            'convert'        => 'underscores',
-            'easycart'       => '1',
-            'shipinfo'       => '1',
-            'authtype'       => MODULE_PAYMENT_PLUGNPAY_CCMODE,
-            'paymethod'      => MODULE_PAYMENT_PLUGNPAY_PAYMETHOD,
-            'dontsndmail'    => MODULE_PAYMENT_PLUGNPAY_DONTSNDMAIL,
-            // Card Info
-            'card_number'    => $card_number,
-            'card-name'      => $transaction_data[5],
-            'card-amount'    => $currAmount_usd,
-            'card-exp'       => $transaction_data[7],
-            'cc-cvv'         => $transaction_data[10]
-        );
-        write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- PlugNPay Value Sent : \n\n".print_r($pnp_post_values, true));
-
-        // init curl handle
-        $pnp_ch = curl_init(PLUGNPAY_PAYMENT_URL);
-        curl_setopt($pnp_ch, CURLOPT_RETURNTRANSFER, 1);
-        $http_query = http_build_query( $pnp_post_values );
-        curl_setopt($pnp_ch, CURLOPT_POSTFIELDS, $http_query);
-        #curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);  // Upon problem, uncomment for additional Windows 2003 compatibility
-
-        // perform SSL post
-        $pnp_result_page = curl_exec($pnp_ch);
-        parse_str($pnp_result_page, $pnp_transaction_array);
-
-        write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- PlugNPay Result : \n\n".print_r($pnp_transaction_array, true));
-        write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- RESULT : ".$pnp_transaction_array['FinalStatus']);
-        $transaction_detail = serialize($pnp_transaction_array);
-        break;
-
-    case 'iridium':
-        $currCurrency           = BASE_CURRENCY;
-        $currAmount             = $amount;
-        break;
-    case 'sslcommerz':
-    break;
-
-    default:
-        write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-NO SUCH EPAYMENT FOUND");
-        exit();
-}
-
-if (empty($transaction_data['vat']) || !is_numeric($transaction_data['vat'])){
-    $VAT = 0;
-} else {
-    $VAT = $transaction_data['vat'];
-}
-
-write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."curr amount $currAmount $currCurrency BASE_CURRENCY=".BASE_CURRENCY);
+write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."curr amount $amount $currency BASE_CURRENCY=".BASE_CURRENCY);
 $amount_paid = convert_currency($currencies_list, $currAmount, $currCurrency, BASE_CURRENCY);
 $amount_without_vat = $amount_paid / (1+$VAT/100);
 
-//If security verification fails then send an email to administrator as it may be a possible attack on epayment security.
-if ($security_verify == false) {
-    write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- security_verify == False | END");
-    try {
-        //TODO create mail class for agent
-        $mail = new Mail('epaymentverify', $id);
-    } catch (A2bMailException $e) {
-        write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ERROR NO EMAIL TEMPLATE FOUND");
-        exit();
-    }
-    $mail->replaceInEmail(Mail::$TIME_KEY,date("y-m-d H:i:s"));
-    $mail->replaceInEmail(Mail::$PAYMENTGATEWAY_KEY, $payment_method);
-    $mail->replaceInEmail(Mail::$ITEM_AMOUNT_KEY, $amount_paid.$currCurrency);
-
-    // Add Post information / useful to track down payment transaction without having to log
-    $mail->AddToMessage("\n\n\n\n"."-POST Var \n".print_r($_POST, true));
-    $mail->send(ADMIN_EMAIL);
-    exit();
-}
 
 $newkey = securitykey(EPAYMENT_TRANSACTION_KEY, $transaction_data['creationdate']."^".$transactionID."^".$amount."^".$card_id."^".$item_id."^".$item_type);
 if ($newkey == $key) {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."----------- Transaction Key Verified ------------");
 } else {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."----NEW KEY =".$newkey." OLD KEY= ".$key." ------- Transaction Key Verification Failed:".$transaction_data['creationdate']."^".$transactionID."^".$amount."^".$card_id." ------------\n");
+     Header ("Location: checkout_success.php?errcode=-2");
     exit();
 }
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ---------- TRANSACTION INFO ------------\n".print_r($transaction_data,1));
-$payment_modules = new payment($payment_method);
-// load the before_process function from the payment modules
-//$payment_modules->before_process();
+
+//GETTING CUSTOMER INFORMATION
 
 $QUERY = "SELECT username, credit, lastname, firstname, address, city, state, country, zipcode, phone, email, fax, lastuse, activated, currency, useralias, uipass " .
          "FROM cc_card WHERE id = '".$card_id."'";
@@ -321,10 +122,8 @@ if ($resmax) {
 }
 $customer_info = $resmax -> fetchRow();
 $nowDate = date("Y-m-d H:i:s");
-
 $pmodule = $payment_method;
-
-$orderStatus = $payment_modules->get_OrderStatus();
+$orderStatus = $payment_modules->get_OrderStatus($errcode);
 
 if (empty($item_type)) {
     $transaction_type = 'balance';
@@ -536,12 +335,6 @@ if ($id > 0) {
     }
 }
 
-$_SESSION["p_amount"] = null;
-$_SESSION["p_cardexp"] = null;
-$_SESSION["p_cardno"] = null;
-$_SESSION["p_cardtype"] = null;
-$_SESSION["p_module"] = null;
-$_SESSION["p_module"] = null;
 
 //Update the Transaction Status to 1 (Proceed 1)
 $QUERY = "UPDATE cc_epayment_log SET status = 1, transaction_detail ='".addslashes($transaction_detail)."' WHERE id = ".$transactionID;
@@ -564,18 +357,6 @@ switch ($orderStatus) {
     case 2:
         $statusmessage = "Successful";
         break;
-}
-
-if ( ($orderStatus != 2) && ($payment_method=='plugnpay')) {
-    $url_forward = "checkout_payment.php?payment_error=plugnpay&error=The+payment+couldnt+be+proceed+correctly";
-    if(!empty($item_id) && !empty($item_type)) $url_forward .= "&item_id=".$item_id."&item_type=".$item_type;
-    Header ("Location: $url_forward");
-    die();
-}
-
-if ( ($orderStatus == 0) && ($payment_method=='iridium')) {
-    write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : EPAYMENT ORDER STATUS  = ".$statusmessage);
-    die();
 }
 
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : EPAYMENT ORDER STATUS  = ".$statusmessage);
@@ -615,7 +396,6 @@ $payment_modules->after_process();
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : EPAYMENT ORDER STATUS ID = ".$orderStatus." ".$statusmessage);
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ----EPAYMENT TRANSACTION END----");
 
-if ($payment_method=='plugnpay') {
-    Header ("Location: userinfo.php");
-    die;
-}
+Header ("Location: checkout_success.php?errcode=".$orderStatus);
+die;
+
