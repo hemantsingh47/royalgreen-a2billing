@@ -1,8 +1,10 @@
 <?php
 include './lib/customer.defines.php';
 
-getpost_ifset(array('tran_id', 'status', 'sess_id', 'key', 'currency', 'failedreason', 'sessionkey', 'gw', 'GatewayPageURL', 'desc', 'amount'));
+getpost_ifset(array('tran_id', 'status', 'value_a', 'value_b', 'currency', 'failedreason', 'sessionkey', 'gw', 'GatewayPageURL', 'desc', 'amount'));
 $transactionID = $tran_id;
+$key = $value_a;
+$sess_id = $value_b;
 $trans_str = "transactionID=$transactionID";
 
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." SSLCOMMERZ processig : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));

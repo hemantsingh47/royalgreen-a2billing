@@ -12,3 +12,4 @@ yarn-error.log
 worker.log
 composer.lock
 /nbproject
+vendor/adodb/adodb-php
