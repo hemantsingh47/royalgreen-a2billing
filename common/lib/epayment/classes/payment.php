@@ -213,11 +213,11 @@ Class payment {
       }
     }
 
-    public function make_payment($trans_id = 0, $key)
+    public function make_payment($post_data = [], $key)
     {
       if (is_array($this->modules)) {
         if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-          return $GLOBALS[$this->selected_module]->make_payment($trans_id, $key);
+          return $GLOBALS[$this->selected_module]->make_payment($post_data, $key);
         }
       }
     }
