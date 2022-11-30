@@ -47,10 +47,10 @@ if (empty($item_id)) {
 if (!isset($item_type) || is_null($item_type)) {
     $item_type = '';
 }
-// if(!isset($amount)) {
-//     Header ("Location: userinfo.php");
-//     die;
-// }
+if(!isset($amount)) {
+    Header ("Location: userinfo.php");
+    die;
+}
 
 if ($item_type == "invoice" && is_numeric($item_id)) {
     $table_invoice = new Table("cc_invoice", "status, paid_status");

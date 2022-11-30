@@ -48,7 +48,7 @@ $payment_method = $transaction_data['paymentmethod'];
 $payment_module = new payment($payment_method);
 
 $success = false;
-$orderStatus = $payment_module->get_OrderStatus($status);
+$orderStatus = $payment_module->getSSLCommerzOrderStatus($status);
 $statusmessage  = $status;
 $QUERY = "UPDATE cc_epayment_log SET status = '".$orderStatus."' WHERE id = ".$transactionID;
 
@@ -93,9 +93,9 @@ $currencyObject = new currencies();
 $currencies_list = get_currencies();
 $VAT = !empty($transaction_data['vat']) && is_numeric($transaction_data['vat']) ? $transaction_data['vat']: 0;
 
-write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."curr amount $amount $currency BASE_CURRENCY=".BASE_CURRENCY);
-$amount_paid = convert_currency($currencies_list, $currAmount, $currCurrency, BASE_CURRENCY);
+$amount_paid = convert_currency($currencies_list, $amount, $currency, BASE_CURRENCY);
 $amount_without_vat = $amount_paid / (1+$VAT/100);
+write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."curr amount $amount $currency BASE_CURRENCY=".BASE_CURRENCY." AMOUNT PAID= ".$amount_paid.' AMOUNT WITHOUT VAT= '.$amount_without_vat);
 
 
 $newkey = securitykey(EPAYMENT_TRANSACTION_KEY, $transaction_data['creationdate']."^".$transactionID."^".$transaction_data['amount']."^".$card_id."^".$item_id."^".$item_type);
@@ -145,8 +145,8 @@ $Query = "INSERT INTO cc_payments ( customers_id, customers_name, customers_emai
             " cc_number, cc_expires, orders_status, last_modified, date_purchased, orders_date_finished, orders_amount, currency, currency_value) values (" .
             " '".$card_id."', '".$customer_info[3]." ".$customer_info[2]."', '".$customer_info["email"]."', '$transaction_type', '".
             $customer_info[0]."', 1, '$pmodule', '".$_SESSION["p_cardtype"]."', '".$transaction_data[5]."', '".$transaction_data[6]."', '".
-            $transaction_data[7]."',  $orderStatus, '".$nowDate."', '".$nowDate."', '".$nowDate."',  ".$amount_paid.",  '".$currCurrency."', '".
-            $currencyObject->get_value($currCurrency)."' )";
+            $transaction_data[7]."',  $orderStatus, '".$nowDate."', '".$nowDate."', '".$nowDate."',  ".$amount_paid.",  '".$$currency."', '".
+            $currencyObject->get_value($$currency)."' )";
 $result = $DBHandle_max -> Execute($Query);
 
 // UPDATE THE CARD CREDIT

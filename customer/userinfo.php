@@ -44,12 +44,12 @@ getpost_ifset(array('posted', 'Period', 'frommonth', 'fromstatsmonth', 'tomonth'
 $currencies_list = get_currencies();
 
 $two_currency = false;
-if (!isset ($currencies_list[strtoupper($customer_info[22])][2]) || !is_numeric($currencies_list[strtoupper($customer_info[22])][2])) {
+if ((!isset ($currencies_list[strtoupper($customer_info['currency'])][2]) || !is_numeric($currencies_list[strtoupper($customer_info['currency'])][2])) || strtoupper($customer_info['currency']) == strtoupper(BASE_CURRENCY)) {
     $mycur = 1;
 } else {
-    $mycur = $currencies_list[strtoupper($customer_info[22])][2];
-    $display_currency = strtoupper($customer_info[22]);
-    if (strtoupper($customer_info[22]) != strtoupper(BASE_CURRENCY))
+    $mycur = $currencies_list[strtoupper($customer_info['currency'])][2];
+    $display_currency = strtoupper($customer_info['currency']);
+    if (strtoupper($customer_info['currency']) != strtoupper(BASE_CURRENCY))
         $two_currency = true;
 }
 
@@ -143,13 +143,14 @@ border-radius: 100px;
                                         <label class="col-xl-3"></label>
                                         <div class="col-lg-8 col-xl-6">
                                             <h3 class="kt-section__title kt-section__title-sm">Customer Information</h3>
+                                           
                                         </div>
                                         <div class="col-lg-4 col-xl-3">
                                                     <div class="kt-widget__item">
                                                         <div class="kt-widget__details"><br>
                                                             <i class="flaticon-piggy-bank"></i>
                                                             <span class="kt-widget__title"><b><?php echo gettext("BALANCE REMAINING");?> :</b>&nbsp;</span>
-                                                                <font class="kt-widget__value"><?php echo $credit_cur.' '.$customer_info[22]; ?></font>
+                                                                <font class="kt-widget__value"><?php echo $credit_cur.' '.$customer_info['currency']; ?></font>
                                                         </div>
                                                         <div class="kt-widget__details">
                                                             <i class="flaticon-user-ok"></i>

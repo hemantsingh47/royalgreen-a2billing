@@ -333,8 +333,7 @@ function rowOutEffect(object) {
                 <div class="form-actions">
                     <b><?php echo gettext("Continue Checkout Procedure to confirm this order")?></b>&nbsp;
                     <input type="submit" name="confirm" alt="Confirm Order" value="&nbsp;<?php echo gettext("Confirm Order")?>&nbsp;" class="btn btn-brand">
-					<b> <?php echo "OR";?> </b>
-				<a href="authorize_payment.php"><input type="button"  alt="Pay using Authorize" border="0" title="Pay using Authorize" class="btn btn-brand" value="Pay using Authorize"></a>
+				
                 </div>
             </div>                
 				</div>
