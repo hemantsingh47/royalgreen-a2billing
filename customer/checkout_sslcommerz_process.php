@@ -5,7 +5,7 @@ getpost_ifset(array('tran_id', 'status', 'sess_id', 'key', 'currency', 'failedre
 $transactionID = $tran_id;
 $trans_str = "transactionID=$transactionID";
 
-write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."SSLCOMMERZ processig : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
+write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." SSLCOMMERZ processig : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
 
 include './lib/customer.module.access.php';
 include './lib/Form/Class.FormHandler.inc.php';
@@ -51,7 +51,7 @@ if ($row['status'] == 'Canceled') {
     $errcode = 5;
 }
 
-if ($row['status'] == 'Processing') {
+if ($row['status'] == 'VALID') {
     $validated = $payment_module->orderValidate($transactionID, $amount, $currency, $_POST);
     if ($validated) {
         $success = true;
@@ -63,6 +63,10 @@ if ($row['status'] == 'Processing') {
         $QUERY = "UPDATE cc_epayment_log SET status = '-2' WHERE id = ".$transactionID;
         $errcode = -2;
     }
+}
+if ($row['status'] == 'Processing') {
+    $QUERY = "UPDATE cc_epayment_log SET status = '3' WHERE id = ".$transactionID;
+    $errcode = 3;
 }
 
 if ($row['status'] == 'Falied') {

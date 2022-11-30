@@ -659,8 +659,8 @@ class sslcommerz
 
     public function set_additional_info(array $info)
     {
-        $this->data['value_a'] = (isset($info['value_a'])) ? $info['value_a'] : null; // value_a [ string (255) - Extra parameter to pass your meta data if it is needed. Not mandatory]
-        $this->data['value_b'] = (isset($info['value_b'])) ? $info['value_b'] : null; // value_b [ string (255) - Extra parameter to pass your meta data if it is needed. Not mandatory]
+        $this->data['key'] = (isset($info['key'])) ? $info['key'] : null; // value_a [ string (255) - Extra parameter to pass your meta data if it is needed. Not mandatory]
+        $this->data['sess_id'] = (isset($info['sess_id'])) ? $info['sess_id'] : null; // value_b [ string (255) - Extra parameter to pass your meta data if it is needed. Not mandatory]
         $this->data['value_c'] = (isset($info['value_c'])) ? $info['value_c'] : null; // value_c [ string (255) - Extra parameter to pass your meta data if it is needed. Not mandatory]
         $this->data['value_d'] = (isset($info['value_d'])) ? $info['value_d'] : null; // value_d [ string (255) - Extra parameter to pass your meta data if it is needed. Not mandatory]
 

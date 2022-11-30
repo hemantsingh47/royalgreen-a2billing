@@ -114,6 +114,8 @@ $post_data["product_category"] = "Voip";
 $post_data["product_profile"] = "general";
 $post_data["product_name"] = "Recharge";
 $post_data["num_of_item"] = "1";
+$post_data["key"] = $key;
+$post_data["sess_id"] = $sess_id;
 $security_verify = true;
 
 
