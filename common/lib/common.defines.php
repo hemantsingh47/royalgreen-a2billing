@@ -1,6 +1,6 @@
 <?php
 
-
+date_default_timezone_set('UTC');
 // SETTINGS FOR DATABASE CONNECTION
 define ("HOST", isset($A2B->config['database']['hostname'])?$A2B->config['database']['hostname']:null);
 define ("PORT", isset($A2B->config['database']['port'])?$A2B->config['database']['port']:null);

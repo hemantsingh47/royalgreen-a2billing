@@ -28,7 +28,12 @@
 	
 	<!-- new theme code-->
 	
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta http-equiv="Expires" content="Fri, Jan 01 1900 00:00:00 GMT">
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Cache-Control" content="no-cache">
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<meta http-equiv="content-language" content="en">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimal-ui"> 
 
 		<!--begin::Fonts -->
 		<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
@@ -103,7 +108,3 @@
 	
 </HEAD>
 <body class="kt-quick-panel--right kt-demo-panel--right kt-offcanvas-panel--right kt-header--fixed kt-header-mobile--fixed kt-subheader--enabled kt-subheader--transparent kt-aside--enabled kt-aside--fixed kt-page--loading">
-
-<!--
-<div id="page-wrap">
-	<div id="inside">-->

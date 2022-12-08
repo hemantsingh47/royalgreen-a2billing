@@ -15,7 +15,7 @@ $transactionID = $tran_id;
 $key = $value_a;
 $sess_id = $value_b;
 $return_cancel_url = !empty($value_c)? $value_c :'userinfo.php';
-$return_success_url = !empty($value_c)? $value_c :'checkout_success.php';
+$return_success_url = !empty($value_d)? $value_d :'checkout_success.php';
 $trans_str = "transactionID=$transactionID";
 
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." SSLCOMMERZ processing : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
@@ -36,13 +36,28 @@ if (empty($transaction_data) || (!is_array($transaction_data) && count($transact
     Header ("Location: ".$return_success_url."?errcode=-2");
     exit();
 }
+
 $transaction_data = reset($transaction_data);
+
 $card_id = $transaction_data['cardid'];
 $item_id = $transaction_data['item_id'];
 $item_type = $transaction_data['item_type'];
 if (empty($item_type)) {
     $item_type = '';
 }
+
+//GETTING CUSTOMER INFORMATION
+
+$QUERY = "SELECT username, credit, lastname, firstname, address, city, state, country, zipcode, phone, email, fax, lastuse, activated, currency, useralias, uipass " .
+         "FROM cc_card WHERE id = '".$card_id."'";
+$resmax = $DBHandle_max -> Execute($QUERY);
+if ($resmax) {
+    $numrow = $resmax -> RecordCount();
+} else {
+    write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ERROR NO SUCH CUSTOMER EXISTS, CUSTOMER ID = ".$card_id);
+    exit(gettext("No Such Customer exists."));
+}
+
 // $amount = $transaction_data['amount'];
 // $currency = $transaction_data['currency'];
 $payment_method = $transaction_data['paymentmethod'];
@@ -51,6 +66,12 @@ $payment_module = new payment($payment_method);
 
 $success = false;
 $orderStatus = $payment_module->getSSLCommerzOrderStatus($status);
+if (!empty($transaction_data['status']) && $transaction_data['status'] == 2 ) {
+    write_log(LOGFILE_EPAYMENT, basename(__FILE__).
+        ' line:'.__LINE__."- $trans_str : TRANSACTION ALREADY COMPLETED, TRANSACTION ID =".$transactionID);
+    Header ("Location: ".$return_success_url."?errcode=2");
+    exit();
+}
 $statusmessage  = $status;
 $QUERY = "UPDATE cc_epayment_log SET status = '".$orderStatus."' WHERE id = ".$transactionID;
 
@@ -97,7 +118,7 @@ $VAT = !empty($transaction_data['vat']) && is_numeric($transaction_data['vat']) 
 
 $amount_paid = convert_currency($currencies_list, $amount, $currency, BASE_CURRENCY);
 $amount_without_vat = $amount_paid / (1+$VAT/100);
-write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."curr amount $amount $currency BASE_CURRENCY=".BASE_CURRENCY." AMOUNT PAID= ".$amount_paid.' AMOUNT WITHOUT VAT= '.$amount_without_vat);
+write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." curr amount $amount $currency BASE_CURRENCY=".BASE_CURRENCY." AMOUNT PAID= ".$amount_paid.' AMOUNT WITHOUT VAT= '.$amount_without_vat);
 
 
 $newkey = securitykey(EPAYMENT_TRANSACTION_KEY, $transaction_data['creationdate']."^".$transactionID."^".$transaction_data['amount']."^".$card_id."^".$item_id."^".$item_type);
@@ -110,17 +131,7 @@ if ($newkey == $key) {
 }
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ---------- TRANSACTION INFO ------------\n".print_r($transaction_data,1));
 
-//GETTING CUSTOMER INFORMATION
-
-$QUERY = "SELECT username, credit, lastname, firstname, address, city, state, country, zipcode, phone, email, fax, lastuse, activated, currency, useralias, uipass " .
-         "FROM cc_card WHERE id = '".$card_id."'";
-$resmax = $DBHandle_max -> Execute($QUERY);
-if ($resmax) {
-    $numrow = $resmax -> RecordCount();
-} else {
-    write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ERROR NO SUCH CUSTOMER EXISTS, CUSTOMER ID = ".$card_id);
-    exit(gettext("No Such Customer exists."));
-}
+//customer progress
 $customer_info = $resmax -> fetchRow();
 $nowDate = date("Y-m-d H:i:s");
 $pmodule = $payment_method;
@@ -153,7 +164,7 @@ $result = $DBHandle_max -> Execute($Query);
 
 // UPDATE THE CARD CREDIT
 $id = 0;
-if ($customer_info[0] > 0 && $orderStatus == 2) {
+if ($customer_info[0] > 0 && $orderStatus == 2 && $success) {
     /* CHECK IF THE CARDNUMBER IS ON THE DATABASE */
     $instance_table_card = new Table("cc_card", "username, id");
     $FG_TABLE_CLAUSE_card = " username='".$customer_info[0]."'";
@@ -338,7 +349,7 @@ if ($id > 0) {
 
 
 //Update the Transaction Status to 1 (Proceed 1)
-$QUERY = "UPDATE cc_epayment_log SET status = 1, transaction_detail ='".addslashes($transaction_detail)."' WHERE id = ".$transactionID;
+$QUERY = "UPDATE cc_epayment_log SET status = $orderStatus, transaction_detail ='".addslashes($transaction_detail)."' WHERE id = ".$transactionID;
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- QUERY = $QUERY");
 $paymentTable->SQLExec ($DBHandle_max, $QUERY);
 

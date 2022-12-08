@@ -182,7 +182,7 @@ Class payment {
     {
       if (is_array($this->modules)) {
         if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {
-          return $GLOBALS[$this->selected_module]->process_button($trans_id, $key);
+          return $GLOBALS[$this->selected_module]->process_button($trans_id, $key, $type);
         }
       }
     }

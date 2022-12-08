@@ -113,7 +113,7 @@ class sslcommerz
          }
         return $process_button_string;
     }
-s
+
 
     public function get_CurrentCurrency()
     {
@@ -135,6 +135,7 @@ s
 
     public function getSSLCommerzOrderStatus($status = 'Failed')
     {
+        $this->error = $status;
         switch ($status) {
             case "FAILED":
                 return -2;
