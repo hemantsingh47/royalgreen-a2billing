@@ -42,24 +42,9 @@ include './lib/customer.smarty.php';
 getpost_ifset(array('errcode'));
 
 // #### HEADER SECTION
-$smarty->display( 'main.tpl');
-$popup_select = 1;
+$smarty->display( 'header.tpl');
 ?>
-<!-- begin:: Subheader -->
-<div class="kt-subheader   kt-grid__item" id="kt_subheader">
-    <div class="kt-container  kt-container--fluid ">
-        <div class="kt-subheader__main">
-            <h3 class="kt-subheader__title"> Confirm Order </h3>
-            <span class="kt-subheader__separator kt-hidden"></span>
-                <div class="kt-subheader__breadcrumbs">
-                    <a href="#" class="kt-subheader__breadcrumbs-home"><i class="flaticon2-shelter"></i></a>
-                    <a href="" class="kt-subheader__breadcrumbs-link"><?php echo gettext("Payment").' '.gettext("Message")?></a>
-                </div>
-            </span>
-        </div>
-    </div>
-</div>
-<!-- end:: Subheader -->
+
 <div class="kt-container  kt-container--fluid  kt-grid__item kt-grid__item--fluid">
   <div class="col-md-12" style="margin: 0 auto;">
     <!--begin::Portlet-->
@@ -114,7 +99,7 @@ $popup_select = 1;
             </td>
         </tr>
         <tr>
-            <td align=center colspan=2><a class="btn btn-primary btn-small" href="<?php echo tep_href_link("userinfo.php","", 'SSL', false, false);?>">[Home]</a></td>
+            <td align=center colspan=2><a class="btn btn-primary btn-small" href="<?php echo tep_href_link("checkout_payment_mo.php","", 'SSL', false, false);?>">[Home]</a></td>
         </tr>
       </table>
     </div>
@@ -124,4 +109,4 @@ $popup_select = 1;
 
 <?php
 
-$smarty->display( 'footer.tpl');
+$smarty->display( 'footer_mo.tpl');

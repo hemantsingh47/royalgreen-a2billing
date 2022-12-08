@@ -10,10 +10,12 @@ include './lib/epayment/includes/html_output.php';
 include './lib/epayment/includes/configure.php';
 include './lib/epayment/includes/loadconfiguration.php';
 
-getpost_ifset(array('tran_id', 'status', 'value_a', 'value_b', 'currency', 'failedreason', 'sessionkey', 'gw', 'GatewayPageURL', 'desc', 'amount'));
+getpost_ifset(array('tran_id', 'status', 'value_a', 'value_b', 'value_c', 'value_d', 'currency', 'failedreason', 'sessionkey', 'gw', 'GatewayPageURL', 'desc', 'amount'));
 $transactionID = $tran_id;
 $key = $value_a;
 $sess_id = $value_b;
+$return_cancel_url = !empty($value_c)? $value_c :'userinfo.php';
+$return_success_url = !empty($value_c)? $value_c :'checkout_success.php';
 $trans_str = "transactionID=$transactionID";
 
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__." SSLCOMMERZ processing : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
@@ -31,7 +33,7 @@ $transaction_data = $paymentTable->SQLExec ($DBHandle_max, $QUERY);
 if (empty($transaction_data) || (!is_array($transaction_data) && count($transaction_data) == 0)) {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).
         ' line:'.__LINE__."- $trans_str : ERROR INVALID TRANSACTION ID WHILE RETURNING, TRANSACTION ID =".$transactionID);
-    Header ("Location: checkout_success.php?errcode=-2");
+    Header ("Location: ".$return_success_url."?errcode=-2");
     exit();
 }
 $transaction_data = reset($transaction_data);
@@ -79,7 +81,7 @@ write_log(LOGFILE_EPAYMENT, basename(__FILE__).
     " FROM ".$payment_method."; FOR CUSTOMER ID ".$card_id."; OF AMOUNT ".$amount);
 
 if(!$success) {
-    Header ("Location: checkout_success.php?errcode=".$orderStatus);
+    Header ("Location: ".$return_success_url."?errcode=".$orderStatus);
     exit();
 }
 
@@ -103,7 +105,7 @@ if ($newkey == $key) {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."----------- Transaction Key Verified ------------");
 } else {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."----NEW KEY =".$newkey." OLD KEY= ".$key." ------- Transaction Key Verification Failed:".$transaction_data['creationdate']."^".$transactionID."^".$amount."^".$card_id." ------------\n");
-     Header ("Location: checkout_success.php?errcode=-2");
+     Header ("Location: ".$return_success_url."?errcode=-2");
     exit();
 }
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ---------- TRANSACTION INFO ------------\n".print_r($transaction_data,1));
@@ -379,6 +381,6 @@ $payment_module->after_process();
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : EPAYMENT ORDER STATUS ID = ".$orderStatus." ".$statusmessage);
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-$trans_str : ----EPAYMENT TRANSACTION END----");
 
-Header ("Location: checkout_success.php?errcode=".$orderStatus);
+Header ("Location: ".$return_success_url."?errcode=".$orderStatus);
 die;
 

@@ -1,9 +1,11 @@
 <?php
 include './lib/customer.defines.php';
 
-getpost_ifset(array('transactionID', 'sess_id', 'key', 'currency', 'md5sig', 'status'));
+getpost_ifset(array('transactionID', 'sess_id', 'key', 'currency', 'md5sig', 'status', 'return_url', 'success_url'));
 
 $trans_str = "transactionID=$transactionID";
+$returnUrl = empty($return_url)? 'userinfo.php': $return_url;
+$successUrl = empty($success_url)? 'checkout_success.php': $success_url;
 
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."EPAYMENT : $trans_str - transactionKey=$key \n -POST Var \n".print_r($_POST, true));
 
@@ -44,7 +46,7 @@ $transaction_data = $paymentTable->SQLExec ($DBHandle_max, $QUERY);
 if (empty($transaction_data) || (!is_array($transaction_data) && count($transaction_data) == 0)) {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).
         ' line:'.__LINE__."- $trans_str : ERROR INVALID TRANSACTION ID PROVIDED, TRANSACTION ID =".$transactionID);
-    Header ("Location: userinfo.php");
+    Header ("Location: ".$returnUrl);
     exit();
 }
 $transaction_data = reset($transaction_data);
@@ -63,7 +65,7 @@ $customer_res = $inst_table -> SQLExec($DBHandle_max, $CUSTOMER_QUERY);
 if (!$customer_res || !is_array($customer_res)) {
     write_log(LOGFILE_EPAYMENT, basename(__FILE__).
         ' line:'.__LINE__."- $trans_str : ERROR LOADING ACCOUNT INFORMATION, CARD ID =".$card_id);
-    Header ("Location: userinfo.php");
+    Header ("Location: ".$returnUrl);
     exit ();
 }
 write_log(LOGFILE_EPAYMENT, basename(__FILE__).
@@ -116,6 +118,8 @@ $post_data["product_name"] = "Recharge";
 $post_data["num_of_item"] = "1";
 $post_data["value_a"] = $key;
 $post_data["value_b"] = $sess_id;
+$post_data["value_c"] = $returnUrl; // return url
+$post_data["value_d"] = $successUrl; //ceckout success url
 $security_verify = true;
 
 
@@ -129,16 +133,15 @@ switch ($payment_method) {
         $payment_result = $payment_module->make_payment($post_data, 'hosted');
         if(!empty($payment_result['failedreason'])) {
             write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."- SSLCommerz ERROR : \n\n".print_r($payment_result, true));
-            Header ("Location: checkout_success.php?errcode=-2");
+            Header ("Location: ".$successUrl."?errcode=-2");
             exit();
-            //$security_verify = false;
         }
         
 
         break;
     default:
         write_log(LOGFILE_EPAYMENT, basename(__FILE__).' line:'.__LINE__."-NO SUCH EPAYMENT FOUND");
-        Header ("Location: checkout_success.php?errcode=6");
+        Header ("Location: ".$successUrl."?errcode=5");
         exit();
         
 }
