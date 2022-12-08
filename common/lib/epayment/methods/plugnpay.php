@@ -293,7 +293,7 @@ class plugnpay
       return $confirmation;
     }
 
-    public function process_button($transactionID = 0, $key = "")
+    public function process_button($transactionID = 0, $key = "", $type = '_WEB')
     {
       // Change made by using PlugnPay API Connection
       $card_cvv=$_POST['cvv'];

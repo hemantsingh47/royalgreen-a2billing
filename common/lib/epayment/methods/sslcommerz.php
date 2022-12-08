@@ -85,7 +85,7 @@ class sslcommerz
     }
 
     
-    public function process_button($transactionID = 0, $key= "")
+    public function process_button($transactionID = 0, $key= "", $type = '_WEB')
     {
         global $order, $currencies, $currency;
 
@@ -95,30 +95,25 @@ class sslcommerz
         }
         $currencyObject = new currencies();
         $process_button_string = 
-            // tep_draw_hidden_field('item_name', STORE_NAME) .
+            tep_draw_hidden_field('item_name', STORE_NAME) .
             tep_draw_hidden_field('no_shipping', '1') .
             tep_draw_hidden_field('transactionID', $transactionID) .
             tep_draw_hidden_field('key', $key) .
             tep_draw_hidden_field('PHPSESSID', session_id()) .
             tep_draw_hidden_field('sess_id', session_id()) .
             tep_draw_hidden_field('amount', number_format($order->info['total'], $currencyObject->get_decimal_places($my_currency))) .
-            //tep_draw_hidden_field('shipping', number_format($order->info['shipping_cost'] * $currencyObject->get_value($my_currency), $currencyObject->get_decimal_places($my_currency))) .
-            tep_draw_hidden_field('currency_code', $my_currency) .
-            // tep_draw_hidden_field('notify_url', tep_href_link("checkout_process.php?transactionID=".$transactionID."&sess_id=".session_id()."&key=".$key, '', 'SSL')) .
-            // tep_draw_hidden_field('return', tep_href_link("userinfo.php", '', 'SSL')) .
-            tep_draw_hidden_field('cancel_return', tep_href_link("userinfo.php", '', 'SSL'));
-
+            tep_draw_hidden_field('currency_code', $my_currency);
+         if($type === '_WEB' ) {
+           $process_button_string .= tep_draw_hidden_field('return_url', tep_href_link("userinfo.php", '', 'SSL')) .
+            tep_draw_hidden_field('success_url', tep_href_link("checkout_success.php", '', 'SSL'));
+         }
+         if($type === '_APP' ) {
+           $process_button_string .= tep_draw_hidden_field('return_url', tep_href_link("checkout_payment_mo.php", '', 'SSL')) .
+            tep_draw_hidden_field('success_url', tep_href_link("checkout_success_mo.php", '', 'SSL'));
+         }
         return $process_button_string;
     }
-
-	public function process_button_mo($transactionID = 0, $key= "")
-    {
-        $process_button_string = $this->process_button($transactionID, $key);
-        $process_button_string .= tep_draw_hidden_field('return', tep_href_link("cancel_payment.php", '', 'SSL')) .
-                               tep_draw_hidden_field('cancel_return', tep_href_link("cancel_payment.php", '', 'SSL'));
-
-        return $process_button_string;
-    }
+s
 
     public function get_CurrentCurrency()
     {

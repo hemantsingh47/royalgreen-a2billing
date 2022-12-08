@@ -66,7 +66,7 @@ class paystack
         return false;
     }
 
-    public function process_button($transactionID = 0, $key= "")
+    public function process_button($transactionID = 0, $key= "", $type = '_WEB')
     {
         global $order, $currencies, $currency;
 

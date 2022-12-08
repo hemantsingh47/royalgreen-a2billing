@@ -78,7 +78,7 @@ Class payment {
     {
       $js = '';
       if (is_array($this->modules)) {
-        $js = '<script language="javascript"><!-- ' . "\n" .
+        $js = '<script language="text/javascript"><!-- ' . "\n" .
               'function check_form() {' . "\n" .
               '  var error = 0;' . "\n" .
               '  var error_message = "' . JS_ERROR . '";' . "\n" .
@@ -89,7 +89,7 @@ Class payment {
               '        payment_value = document.checkout_payment.payment[i].value;' . "\n" .
               '      }' . "\n" .
               '    }' . "\n" .
-              '  } elseif (document.checkout_payment.payment.checked) {' . "\n" .
+              '  } elseif (document.checkout_payment.payment.checked) { ' . "\n" .
               '    payment_value = document.checkout_payment.payment.value;' . "\n" .
               '  } elseif (document.checkout_payment.payment.value) {' . "\n" .
               '    payment_value = document.checkout_payment.payment.value;' . "\n" .
@@ -177,7 +177,8 @@ Class payment {
         }
       }
     }
-    public function process_button($trans_id = 0, $key)
+
+    public function process_button($trans_id = 0, $key = "", $type = '_WEB')
     {
       if (is_array($this->modules)) {
         if (is_object($GLOBALS[$this->selected_module]) && ($GLOBALS[$this->selected_module]->enabled) ) {

@@ -99,7 +99,7 @@ define('CC_OWNER_MIN_LENGTH', '2');
 define('CC_NUMBER_MIN_LENGTH', '15');
 
 // javascript messages
-define('JS_ERROR', gettext('Errors have occured during the process of your form.')."\n\n".gettext('Please make the following corrections:\n\n'));
+define('JS_ERROR', gettext('Errors have occured during the process of your form.').'\n'.gettext('Please make the following corrections:\n\n'));
 define('JS_REVIEW_TEXT', gettext('* The \'Review Text\' must have at least').' ' . REVIEW_TEXT_MIN_LENGTH .' '. gettext('characters').'.\n');
 define('JS_REVIEW_RATING', '* '.gettext('You must rate the product for your review.').'\n');
 define('JS_ERROR_NO_PAYMENT_MODULE_SELECTED', '* '.gettext('Please select a payment method for your order.').'\n');
